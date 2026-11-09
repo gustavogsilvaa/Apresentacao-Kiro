@@ -17,6 +17,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.transforms
+import matplotlib.patches
+import matplotlib.ticker
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import LinearSegmentedColormap, Normalize, TwoSlopeNorm
 from matplotlib.lines import Line2D
@@ -44,7 +46,7 @@ DPI = 220
 
 
 def br(v, d=1):
-    return f"{v:.{d}f}".replace(".", ",")
+    return f"{v:.{d}f}".replace(".", ",").replace("-", "−")
 
 
 def virgula(eixo, d=None):
@@ -459,7 +461,200 @@ def mare_dhn():
     save(fig, "08_mare_dhn.png")
 
 
+# ─────────────────────────────────────────────────────────────
+# Ícones do slide de justificativa (fundo transparente)
+# ─────────────────────────────────────────────────────────────
+OURO, OURO_ESC, CORAL, AZUL_AGUA = "#B08A2E", "#7D6220", "#CC6A58", "#7FA7D8"
+
+
+def _icone(nome, desenho, size=(2.6, 1.55)):
+    fig, ax = plt.subplots(figsize=size)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 6)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    desenho(ax)
+    fig.savefig(os.path.join(OUT, nome), dpi=300, transparent=True, bbox_inches="tight", pad_inches=0.02)
+    plt.close(fig)
+
+
+def icone_problema(ax):
+    x = np.linspace(0.3, 9.7, 400)
+    y = 2.5 + 0.45 * np.sin(1.7 * x) + 0.25 * np.sin(4.3 * x + 1) + 1.9 * np.exp(-((x - 7.4) / 0.32) ** 2)
+    lim = 3.9
+    ax.plot([0.3, 9.7], [lim, lim], ls="--", lw=1.6, color=CORAL)
+    ax.text(9.7, lim + 0.25, "limite", ha="right", fontsize=9, color=CORAL)
+    ax.fill_between(x, lim, y, where=y > lim, color=CORAL, alpha=0.45, lw=0)
+    ax.plot(x, y, lw=2.2, color=OURO_ESC)
+    ax.plot([0.3, 9.7], [0.9, 0.9], lw=1.0, color="#B9B2A6")
+    ax.text(0.3, 0.2, "tração no tempo", fontsize=9, color="#7B8290")
+
+
+def icone_lacuna(ax):
+    ax.add_patch(matplotlib.patches.FancyBboxPatch((2.4, 1.4), 4.0, 2.8, boxstyle="round,pad=0.25",
+                                                   fc="#C9CED6", ec="#6F7684", lw=1.4))
+    ax.add_patch(matplotlib.patches.FancyBboxPatch((3.0, 2.6), 2.8, 1.1, boxstyle="round,pad=0.1",
+                                                   fc="#EEF2F6", ec="#6F7684", lw=1.0))
+    ax.text(4.4, 3.15, "kN", ha="center", va="center", fontsize=11, color="#6F7684", weight="bold")
+    ax.plot([6.6, 8.2, 9.2], [2.0, 1.6, 2.4], lw=2.0, color="#6F7684")
+    for cx, cy in [(1.2, 4.6), (1.6, 3.0), (7.6, 4.8)]:
+        ax.add_patch(matplotlib.patches.Polygon([(cx - 0.35, cy), (cx + 0.35, cy), (cx, cy + 0.75)],
+                                                fc=AZUL_AGUA, ec="none"))
+        ax.add_patch(matplotlib.patches.Circle((cx, cy), 0.36, fc=AZUL_AGUA, ec="none"))
+    ax.plot([5.6, 7.6], [0.6, 2.6], lw=4, color=CORAL, solid_capstyle="round")
+    ax.plot([5.6, 7.6], [2.6, 0.6], lw=4, color=CORAL, solid_capstyle="round")
+
+
+def icone_proposta(ax):
+    ax.add_patch(matplotlib.patches.Polygon([(2.6, 4.3), (8.6, 1.0), (9.6, 3.6)], fc=OURO, alpha=0.18,
+                                            ec="none"))
+    ax.add_patch(matplotlib.patches.FancyBboxPatch((0.4, 3.5), 2.4, 1.6, boxstyle="round,pad=0.15",
+                                                   fc="#4A5363", ec="none"))
+    ax.add_patch(matplotlib.patches.Circle((2.75, 4.3), 0.62, fc="#EEF2F6", ec=OURO, lw=2.5))
+    ax.add_patch(matplotlib.patches.Rectangle((0.7, 5.1), 0.7, 0.35, fc="#4A5363", ec="none"))
+    xs = np.linspace(5.4, 9.4, 50)
+    ax.plot(xs, 1.3 + 0.12 * (xs - 7.4) ** 2 - 0.5, lw=2.4, color=OURO_ESC)
+    ax.add_patch(matplotlib.patches.Rectangle((5.0, 0.2), 0.7, 1.1, fc="#2F3A48", ec="none"))
+    ax.add_patch(matplotlib.patches.Rectangle((9.3, 1.5), 0.6, 2.6, fc="#A49C90", ec="none"))
+    ax.text(5.0, 5.3, "sem contato", fontsize=9, color=OURO_ESC, weight="bold")
+
+
+# ─────────────────────────────────────────────────────────────
+# Esquemas dos critérios de avaliação
+# ─────────────────────────────────────────────────────────────
+AZUL_C = "#4C78C8"
+
+
+def _escala(nome, lim_max, faixas, marcas, ticks):
+    """Régua horizontal com faixas e marcas; proporção ~3:1 para ocupar o espaço do card."""
+    fig, ax = plt.subplots(figsize=(3.6, 1.2))
+    for a, b, cor in faixas:
+        ax.barh(0, b - a, left=a, height=0.62, color=cor, edgecolor="white", lw=1)
+    for v, txt, cor, lado in marcas:
+        ax.plot([v, v], [-0.48, 0.48], color=cor, lw=2.4)
+        ax.text(v, 0.56 if lado > 0 else -0.58, txt, ha="center", va="bottom" if lado > 0 else "top",
+                fontsize=10.5, color=cor, weight="bold")
+    ax.set_xlim(0, lim_max)
+    ax.set_ylim(-1.25, 1.2)
+    ax.set_yticks([])
+    ax.set_xticks(ticks)
+    ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}%"))
+    ax.tick_params(axis="x", labelsize=10)
+    for s_ in ("left", "top", "right"):
+        ax.spines[s_].set_visible(False)
+    ax.grid(False)
+    save(fig, nome)
+
+
+def criterios():
+    _escala("crit_mbl.png", 100,
+            [(0, 55, "#CFE0F2"), (55, 100, "#F3C9BF")],
+            [(55, "55% = 41 t", "#B23A2A", 1)],          # 0,55 × MBL de 75 t
+            [0, 25, 50, 75, 100])
+    _escala("crit_swl.png", 125,
+            [(0, 100, "#CFE0F2"), (100, 125, "#F3C9BF")],
+            [(100, "100% = 75 t", "#B23A2A", 1)],
+            [0, 25, 50, 75, 100, 125])
+    # ângulo vertical: cais à esquerda, costado do navio à direita (proporção ~3:1)
+    fig, ax = plt.subplots(figsize=(3.6, 1.2))
+    ax.add_patch(matplotlib.patches.Rectangle((0, 0), 2.6, 1.6, fc="#E9E3D8", ec="none"))
+    ax.add_patch(matplotlib.patches.Rectangle((0, -0.6), 13.8, 0.6, fc="#DCE9F2", ec="none"))
+    ax.add_patch(matplotlib.patches.Rectangle((9.4, -0.6), 4.2, 4.4, fc="#F4EFE7", ec="#A49C90", lw=1.2))
+    ax.add_patch(matplotlib.patches.Rectangle((1.95, 1.6), 0.4, 0.42, fc="#2F3A48", ec="none"))
+    bx, by, fx, fy = 2.15, 1.86, 9.4, 3.6
+    ax.plot([bx, fx], [by, fy], lw=2.6, color=AZUL_C)
+    ax.plot([bx, 7.0], [by, by], lw=1.1, ls="--", color="#7B8290")
+    ang = np.degrees(np.arctan((fy - by) / (fx - bx)))
+    ax.add_patch(matplotlib.patches.Arc((bx, by), 5.6, 5.6, theta1=0, theta2=ang, color="#B23A2A", lw=1.9))
+    ax.text(5.15, 2.05, "θ", fontsize=13, color="#B23A2A", weight="bold")
+    ax.text(0.2, 0.55, "cais", fontsize=10.5, color="#6F7684")
+    ax.text(11.5, 1.45, "navio", fontsize=10.5, color="#6F7684", ha="center")
+    ax.text(3.0, 1.2, "plano do cais", fontsize=9.5, color="#7B8290", style="italic", va="center")
+    ax.plot(fx, fy, "o", ms=5.5, color="#2F3A48")
+    ax.set_xlim(0, 13.8)
+    ax.set_ylim(-0.6, 4.0)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    save(fig, "crit_angulo.png")
+
+
+# ─────────────────────────────────────────────────────────────
+# Slide "Clima ou arranjo": correlação em barras e boxplot ampliado
+# ─────────────────────────────────────────────────────────────
+def correlacao_barras():
+    vars_ = ["Vento", "Corrente", "Hs", "Tp"]
+    r_mbl = [0.02, 0.05, 0.08, -0.07]
+    r_swl = [0.25, 0.20, 0.06, -0.02]
+    x = np.arange(len(vars_))
+    w = 0.34
+    fig, ax = plt.subplots(figsize=(6.4, 2.05), layout="constrained")
+    ax.axhspan(-0.3, 0.3, color="#F1EDE5", lw=0, zorder=0)
+    ax.text(3.6, 0.33, "faixa sombreada: correlação fraca (|r| < 0,3)", ha="right", va="bottom",
+            fontsize=9.5, color="#7B8290")
+    b1 = ax.bar(x - w / 2, r_mbl, w, color="#9DB5DE", label="tração nos cabos (% MBL)", zorder=2)
+    b2 = ax.bar(x + w / 2, r_swl, w, color="#F5C996", label="força nos cabeços (% SWL)", zorder=2)
+    for barras in (b1, b2):
+        for b in barras:
+            v = b.get_height()
+            ax.text(b.get_x() + b.get_width() / 2, v + (0.04 if v >= 0 else -0.04), br(v, 2),
+                    ha="center", va="bottom" if v >= 0 else "top", fontsize=10, color="#2F3A48")
+    ax.axhline(0, color="#6F7684", lw=1)
+    ax.set_xticks(x, vars_)
+    ax.tick_params(axis="x", labelsize=11)
+    ax.set_ylim(-1, 1)
+    ax.set_yticks([-1, -0.5, 0, 0.5, 1])
+    virgula(ax.yaxis, 1)
+    ax.set_ylabel("coeficiente r", fontsize=10)
+    ax.set_xlim(-0.6, 3.65)
+    ax.set_title("A · Correlação entre ambiente e esforços", loc="left", fontsize=12)
+    ax.grid(axis="x", visible=False)
+    ax.legend(loc="upper left", fontsize=9.5, frameon=False, ncol=2)
+    save(fig, "04a_correlacao_barras.png")
+
+
+def boxplot_ampliado(nome="04b_boxplot_cabos.png", figsize=(6.4, 2.05),
+                     titulo="B · % MBL por cabo mais carregado"):
+    stats = [
+        dict(label="9", whislo=11.5, q1=27.2, med=39.3, q3=52.0, whishi=75.3, fliers=[]),
+        dict(label="2", whislo=18.5, q1=21.5, med=23.5, q3=26.5, whishi=33.0, fliers=[]),
+        dict(label="5", whislo=14.8, q1=14.9, med=15.0, q3=15.0, whishi=15.1, fliers=[]),
+        dict(label="6", whislo=11.2, q1=13.0, med=13.8, q3=15.5, whishi=19.0, fliers=[21.3]),
+        dict(label="12", whislo=12.4, q1=12.5, med=12.6, q3=12.6, whishi=12.7, fliers=[]),
+        dict(label="10", whislo=11.0, q1=11.8, med=12.8, q3=16.8, whishi=23.3,
+             fliers=[24.5, 25.5, 26.0, 31.8, 39.3]),
+        dict(label="8", whislo=10.5, q1=11.2, med=11.6, q3=11.9, whishi=12.1, fliers=[]),
+        dict(label="3", whislo=10.0, q1=10.3, med=10.5, q3=10.7, whishi=10.9, fliers=[]),
+        dict(label="7", whislo=9.8, q1=9.85, med=9.9, q3=9.95, whishi=10.0, fliers=[]),
+    ]
+    fig, ax = plt.subplots(figsize=figsize, layout="constrained")
+    ax.axhspan(55, 82, color=LIM, alpha=0.07, lw=0)
+    bp = ax.bxp(stats, patch_artist=True, widths=0.55,
+                medianprops=dict(color=ESC, lw=1.2),
+                flierprops=dict(marker="o", ms=3.5, mfc="white", mec="#6B7280"),
+                whiskerprops=dict(color="#6B7280"), capprops=dict(color="#6B7280"))
+    for i, patch in enumerate(bp["boxes"]):
+        patch.set_facecolor("#B7A8E3" if i == 0 else "#DCD8D0")
+        patch.set_edgecolor("#5B4A9E" if i == 0 else "#8A8275")
+    ax.axhline(55, color=LIM, ls="--", lw=1.4)
+    ax.text(9.45, 57, "limite: 55% MBL", ha="right", va="bottom", fontsize=9.5, color=LIM)
+    ax.text(1.42, 68, "cabo 9: único acima do limite", fontsize=10.5, color="#5B4A9E",
+            weight="bold", va="center")
+    ax.set_xlabel("cabo mais carregado em cada condição", fontsize=10)
+    ax.set_ylabel("% MBL", fontsize=10)
+    ax.set_ylim(5, 82)
+    ax.tick_params(labelsize=10.5)
+    ax.set_title(titulo, loc="left", fontsize=12)
+    save(fig, nome)
+
+
 if __name__ == "__main__":
+    _icone("ic_problema.png", icone_problema)
+    _icone("ic_lacuna.png", icone_lacuna)
+    _icone("ic_proposta.png", icone_proposta)
+    criterios()
+    correlacao_barras()
+    boxplot_ampliado()
+    boxplot_ampliado("04c_boxplot_cabos_alto.png", (6.4, 4.3), "% MBL por cabo mais carregado")
     layout_referencia()
     mare_dhn()
     plano_amarracao()
