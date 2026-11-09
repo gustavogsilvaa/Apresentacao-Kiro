@@ -548,8 +548,8 @@ def _escala(nome, lim_max, faixas, marcas, ticks):
 
 def criterios():
     _escala("crit_mbl.png", 100,
-            [(0, 50, "#CFE0F2"), (50, 55, "#F6E3A6"), (55, 100, "#F3C9BF")],
-            [(50, "50%: sintéticos", "#8A6A10", -1), (55, "55%: aço e notebook", "#B23A2A", 1)],
+            [(0, 55, "#CFE0F2"), (55, 100, "#F3C9BF")],
+            [(55, "55% = 41 t", "#B23A2A", 1)],          # 0,55 × MBL de 75 t
             [0, 25, 50, 75, 100])
     _escala("crit_swl.png", 125,
             [(0, 100, "#CFE0F2"), (100, 125, "#F3C9BF")],
@@ -612,7 +612,8 @@ def correlacao_barras():
     save(fig, "04a_correlacao_barras.png")
 
 
-def boxplot_ampliado():
+def boxplot_ampliado(nome="04b_boxplot_cabos.png", figsize=(6.4, 2.05),
+                     titulo="B · % MBL por cabo mais carregado"):
     stats = [
         dict(label="9", whislo=11.5, q1=27.2, med=39.3, q3=52.0, whishi=75.3, fliers=[]),
         dict(label="2", whislo=18.5, q1=21.5, med=23.5, q3=26.5, whishi=33.0, fliers=[]),
@@ -625,7 +626,7 @@ def boxplot_ampliado():
         dict(label="3", whislo=10.0, q1=10.3, med=10.5, q3=10.7, whishi=10.9, fliers=[]),
         dict(label="7", whislo=9.8, q1=9.85, med=9.9, q3=9.95, whishi=10.0, fliers=[]),
     ]
-    fig, ax = plt.subplots(figsize=(6.4, 2.05), layout="constrained")
+    fig, ax = plt.subplots(figsize=figsize, layout="constrained")
     ax.axhspan(55, 82, color=LIM, alpha=0.07, lw=0)
     bp = ax.bxp(stats, patch_artist=True, widths=0.55,
                 medianprops=dict(color=ESC, lw=1.2),
@@ -642,8 +643,8 @@ def boxplot_ampliado():
     ax.set_ylabel("% MBL", fontsize=10)
     ax.set_ylim(5, 82)
     ax.tick_params(labelsize=10.5)
-    ax.set_title("B · % MBL por cabo mais carregado", loc="left", fontsize=12)
-    save(fig, "04b_boxplot_cabos.png")
+    ax.set_title(titulo, loc="left", fontsize=12)
+    save(fig, nome)
 
 
 if __name__ == "__main__":
@@ -653,6 +654,7 @@ if __name__ == "__main__":
     criterios()
     correlacao_barras()
     boxplot_ampliado()
+    boxplot_ampliado("04c_boxplot_cabos_alto.png", (6.4, 4.3), "% MBL por cabo mais carregado")
     layout_referencia()
     mare_dhn()
     plano_amarracao()
