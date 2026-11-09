@@ -10,6 +10,7 @@ usa Times New Roman.
 Fluxo de leitura em cada slide:
   rótulo da etapa → título (tema) → subtítulo (mensagem principal) → evidência → cards 1 e 2
 A barra de progresso no topo mostra em qual etapa a apresentação está.
+A numeração dos slides é automática.
 
 Imagens: usa imagens_originais/<nome>.png se existir (PNGs exportados do Colab);
 caso contrário usa imagens_recriadas/<nome>.png (gerar_graficos.py).
@@ -62,7 +63,7 @@ def tint(cor, f):
 W, H = 13.333, 7.5
 X0, Y_CONT, Y_FIM = 0.75, 2.05, 6.95
 LARG = 11.85                   # largura útil do conteúdo
-TOTAL = 22
+TOTAL = 24
 prs = Presentation()
 prs.slide_width, prs.slide_height = Inches(W), Inches(H)
 
@@ -136,29 +137,29 @@ def seta(sl, x, y, w, h, cor):
     forma(sl, MSO_SHAPE.CHEVRON, x, y, w, h, tint(cor, 0.55))
 
 
-def numero(sl, n):
-    texto(sl, 11.6, 7.07, 1.4, 0.25, f"{n} / {TOTAL}", 11, TXT3, align=PP_ALIGN.RIGHT)
+def numero(sl):
+    texto(sl, 11.6, 7.07, 1.4, 0.25, f"{len(prs.slides)} / {TOTAL}", 11, TXT3, align=PP_ALIGN.RIGHT)
 
 
 def trilha(sl, atual):
     """Barra de progresso com as seis etapas; a etapa atual fica destacada."""
-    cw, gap, h = 0.92, 0.05, 0.27
-    x = X0 + LARG - (len(ETAPAS) * cw + (len(ETAPAS) - 1) * gap)
+    cw_, gap, h = 0.92, 0.05, 0.27
+    x = X0 + LARG - (len(ETAPAS) * cw_ + (len(ETAPAS) - 1) * gap)
     idx = [k for k, _ in ETAPAS].index(atual)
     for i, (k, nome) in enumerate(ETAPAS):
-        xx = x + i * (cw + gap)
+        xx = x + i * (cw_ + gap)
         if i == idx:
-            forma(sl, MSO_SHAPE.ROUNDED_RECTANGLE, xx, 0.4, cw, h, SECAO[k], raio=0.5)
+            forma(sl, MSO_SHAPE.ROUNDED_RECTANGLE, xx, 0.4, cw_, h, SECAO[k], raio=0.5)
             cor_t, b = "#FFFFFF", True
         else:
-            forma(sl, MSO_SHAPE.ROUNDED_RECTANGLE, xx, 0.4, cw, h,
+            forma(sl, MSO_SHAPE.ROUNDED_RECTANGLE, xx, 0.4, cw_, h,
                   tint(SECAO[k], 0.22 if i < idx else 0.07), raio=0.5)
             cor_t, b = (TXT2 if i < idx else TXT3), False
-        texto(sl, xx, 0.4, cw, h, nome, 9.5, cor_t, bold=b, align=PP_ALIGN.CENTER,
+        texto(sl, xx, 0.4, cw_, h, nome, 9.5, cor_t, bold=b, align=PP_ALIGN.CENTER,
               ancora=MSO_ANCHOR.MIDDLE, linha=1.0)
 
 
-def base(secao, n, rot=None, titulo=None, mensagem=None, nota=None, etapa=None):
+def base(secao, rot=None, titulo=None, mensagem=None, nota=None, etapa=None):
     sl = prs.slides.add_slide(prs.slide_layouts[6])
     cor = SECAO[secao]
     forma(sl, MSO_SHAPE.RECTANGLE, 0, 0, W, H, CREME)
@@ -176,7 +177,7 @@ def base(secao, n, rot=None, titulo=None, mensagem=None, nota=None, etapa=None):
         texto(sl, X0, 1.47, LARG, 0.45, mensagem, 15, TXT2, italic=True)
     if nota:
         texto(sl, X0, 7.06, 10.7, 0.3, nota, 9.5, TXT3)
-    numero(sl, n)
+    numero(sl)
     return sl, cor
 
 
@@ -217,17 +218,21 @@ def imagem(nome):
     raise FileNotFoundError(nome)
 
 
-def por_imagem(sl, nome, x, y, w, h, pad=0.14):
-    """Card branco com a imagem centralizada, mantendo a proporção."""
-    card(sl, x, y, w, h, fill="#FFFFFF")
+def figura(sl, nome, x, y, w, h):
+    """Imagem centralizada na caixa (x, y, w, h), mantendo a proporção."""
     caminho, original = imagem(nome)
     iw, ih = Image.open(caminho).size
-    bw, bh = w - 2 * pad, h - 2 * pad
-    esc = min(bw / iw, bh / ih)
+    esc = min(w / iw, h / ih)
     pw, ph = iw * esc, ih * esc
-    sl.shapes.add_picture(caminho, Inches(x + pad + (bw - pw) / 2), Inches(y + pad + (bh - ph) / 2),
+    sl.shapes.add_picture(caminho, Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2),
                           Inches(pw), Inches(ph))
     return original
+
+
+def por_imagem(sl, nome, x, y, w, h, pad=0.14):
+    """Card branco com a imagem centralizada."""
+    card(sl, x, y, w, h, fill="#FFFFFF")
+    return figura(sl, nome, x + pad, y + pad, w - 2 * pad, h - 2 * pad)
 
 
 def tabela(sl, x, y, w, cabec, linhas, larguras, alt_linha=0.34, size=11.5,
@@ -292,9 +297,8 @@ def colunas_texto(sl, cor, le, resultado, kpi, kpi_leg, rot1="O que o gráfico l
                kpi=kpi, kpi_legenda=kpi_leg, num=2)
 
 
-def slide_grafico(n, sub, titulo, mensagem, nome_img, le, resultado, kpi, kpi_leg):
-    sl, cor = base("resultados", n, f"Etapa 5 · Resultados · {sub}", titulo, mensagem,
-                   etapa="resultados")
+def slide_grafico(sub, titulo, mensagem, nome_img, le, resultado, kpi, kpi_leg):
+    sl, cor = base("resultados", f"Etapa 5 · Resultados · {sub}", titulo, mensagem, etapa="resultados")
     original = por_imagem(sl, nome_img, **IMG)
     colunas_texto(sl, cor, le, resultado, kpi, kpi_leg)
     texto(sl, X0, 7.06, 10.7, 0.3, nota_imagem(original), 9.5, TXT3)
@@ -309,7 +313,7 @@ def capa_fundo(sl):
 cw = (LARG - 0.3) / 3          # largura de card em grade de 3 colunas
 
 # ══════════════════════════════════════════════════════════════
-# 1 · Capa
+# Capa
 # ══════════════════════════════════════════════════════════════
 sl = prs.slides.add_slide(prs.slide_layouts[6])
 capa_fundo(sl)
@@ -323,19 +327,18 @@ texto(sl, X0 + 0.05, 4.3, 11, 0.45,
 texto(sl, X0 + 0.05, 4.95, 8, 0.7,
       ["Gustavo Guilherme Silva · NUSP 11820555",
        "Escola Politécnica da Universidade de São Paulo"], 15, TXT2, entre=2)
-numero(sl, 1)
+numero(sl)
 
 # ══════════════════════════════════════════════════════════════
-# 2 · Roteiro
+# Roteiro
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("roteiro", 2, "Apresentação", "Roteiro",
-               "Do problema aos resultados parciais, em seis etapas")
+sl, cor = base("roteiro", "Apresentação", "Roteiro", "Do problema aos resultados parciais, em seis etapas")
 itens = [("motivacao", "Motivação", "Por que a amarração é crítica nos terminais graneleiros de Santos"),
          ("justificativa", "Justificativa", "A lacuna no monitoramento dos cabos e o objetivo desta etapa"),
          ("cenario", "Cenário analisado", "Terminal T-Grão, maré de Santos, layout típico do Panamax e arranjo simulado"),
          ("abordagem", "Abordagem", "Etapas do trabalho e critérios de avaliação"),
          ("resultados", "Resultados", "Leitura dos gráficos da simulação: esforços, riscos e geometria"),
-         ("conclusoes", "Conclusões", "Conclusões parciais e próximos passos")]
+         ("conclusoes", "Conclusões", "Conclusões parciais, alternativas de segurança e próximos passos")]
 gh = (Y_FIM - Y_CONT - 0.15) / 2
 for k, (sec, tit, desc) in enumerate(itens):
     xx = X0 + (k % 3) * (cw + 0.15)
@@ -348,9 +351,9 @@ for k, (sec, tit, desc) in enumerate(itens):
     texto(sl, xx + 0.3, yy + 1.38, cw - 0.5, gh - 1.48, desc, 13, TXT2)
 
 # ══════════════════════════════════════════════════════════════
-# 3 · Motivação
+# Etapa 1 · Motivação
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("motivacao", 3, "Etapa 1 · Motivação", "Por que estudar a amarração?",
+sl, cor = base("motivacao", "Etapa 1 · Motivação", "Por que estudar a amarração?",
                "Durante o carregamento, o navio é mantido no berço apenas pelo sistema de amarração",
                "Fontes: SILVA (2026a, Tabela 1 e seções 1.3, 1.9 e 6.3); UK P&I CLUB (2009)",
                etapa="motivacao")
@@ -378,47 +381,53 @@ faixa(sl, sy, Y_FIM - sy,
       "Conhecer os esforços nos cabos é o primeiro passo para preveni-la.", cor)
 
 # ══════════════════════════════════════════════════════════════
-# 4 · Justificativa e objetivo
+# Etapa 2 · Justificativa e objetivo (versão visual)
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("justificativa", 4, "Etapa 2 · Justificativa", "Justificativa e objetivo",
+sl, cor = base("justificativa", "Etapa 2 · Justificativa", "Justificativa e objetivo",
                "A tração nos cabos ainda não é medida de forma contínua nos terminais",
                "Fonte: SILVA (2026a, Resumo e seção 1)", etapa="justificativa")
-fw, fh, fgap = (LARG - 2 * 0.5) / 3, 2.15, 0.5
-fluxo = [("O problema",
-          "A tração nos cabos varia continuamente com vento, corrente, maré e navios passantes, "
-          "mas raramente é medida durante a operação."),
-         ("A lacuna",
-          "Células de carga e extensômetros se degradam rapidamente com a salinidade e a umidade. "
-          "O custo de manutenção restringe o acompanhamento a inspeções visuais."),
-         ("A proposta do TF",
-          "Monitoramento de saúde estrutural (**SHM**) sem contato, por visão computacional e "
-          "machine learning, integrado a simulações dos cenários críticos.")]
-for k, (rot, corpo) in enumerate(fluxo):
+fw, fh, fgap = (LARG - 2 * 0.5) / 3, 2.95, 0.5
+fluxo = [("O problema", "ic_problema.png", "A tração muda o tempo todo",
+          "Vento, corrente, maré e navios passantes alteram a carga nos cabos, que raramente é medida "
+          "durante a operação."),
+         ("A lacuna", "ic_lacuna.png", "Sensores se degradam no mar",
+          "Células de carga e extensômetros sofrem com o sal e a umidade; o acompanhamento fica "
+          "restrito a inspeções visuais."),
+         ("A proposta do TF", "ic_proposta.png", "Monitorar sem contato",
+          "Monitoramento de saúde estrutural (SHM) por visão computacional e machine learning, apoiado "
+          "por simulações.")]
+for k, (rot, ic, manchete, corpo) in enumerate(fluxo):
     xx = X0 + k * (fw + fgap)
-    card_texto(sl, xx, Y_CONT, fw, fh, rot, corpo, cor, num=k + 1, size=13.5)
+    card(sl, xx, Y_CONT, fw, fh)
+    selo(sl, xx + 0.2, Y_CONT + 0.15, k + 1, cor)
+    rotulo(sl, xx + 0.57, Y_CONT + 0.19, fw - 0.8, rot, cor)
+    figura(sl, ic, xx + 0.2, Y_CONT + 0.52, fw - 0.4, 1.0)
+    texto(sl, xx + 0.2, Y_CONT + 1.6, fw - 0.4, 0.35, manchete, 15, TXT, bold=True)
+    texto(sl, xx + 0.2, Y_CONT + 1.98, fw - 0.4, fh - 2.06, corpo, 12.5, TXT2)
     if k < 2:
         seta(sl, xx + fw + 0.14, Y_CONT + fh / 2 - 0.2, 0.22, 0.4, cor)
 oy = Y_CONT + fh + 0.2
-card(sl, X0, oy, LARG, Y_FIM - oy)
-rotulo(sl, X0 + 0.25, oy + 0.2, 6, "Objetivo desta etapa", cor)
-texto(sl, X0 + 0.25, oy + 0.52, LARG - 0.5, 0.8,
-      "Identificar, por simulação, as condições de vento, corrente, onda e maré que levam os cabos e "
-      "os cabeços do berço ao limite. Esses cenários formam a base quantitativa que o monitoramento "
-      "deverá detectar.", 13.5, TXT2)
-chips = ["Quantificar os esforços nas 394 condições",
-         "Identificar condições e elementos críticos",
-         "Relacionar a carga à geometria dos cabos"]
-chw = (LARG - 0.5 - 0.3) / 3
-for k, c_txt in enumerate(chips):
-    xx = X0 + 0.25 + k * (chw + 0.15)
-    forma(sl, MSO_SHAPE.ROUNDED_RECTANGLE, xx, Y_FIM - 0.72, chw, 0.48, tint(cor, 0.16), raio=0.3)
-    texto(sl, xx, Y_FIM - 0.72, chw, 0.48, c_txt, 12, TXT, bold=True, align=PP_ALIGN.CENTER,
-          ancora=MSO_ANCHOR.MIDDLE)
+oh = Y_FIM - oy
+card(sl, X0, oy, LARG, oh, fill=tint(cor, 0.09))
+forma(sl, MSO_SHAPE.RECTANGLE, X0, oy + 0.2, 0.07, oh - 0.4, cor)
+rotulo(sl, X0 + 0.32, oy + 0.2, 4.3, "Objetivo desta etapa", cor)
+texto(sl, X0 + 0.32, oy + 0.5, 4.3, oh - 0.6,
+      "Identificar, por simulação, as condições e os elementos que levam o sistema de amarração ao "
+      "limite: os cenários que o monitoramento deverá detectar.", 14, TXT)
+mx0 = X0 + 4.85
+mw = (X0 + LARG - 0.2 - mx0 - 2 * 0.12) / 3
+for k, (verbo, compl) in enumerate([("Quantificar", "os esforços nas 394 condições simuladas"),
+                                   ("Identificar", "as condições e os elementos críticos"),
+                                   ("Relacionar", "a carga à geometria dos cabos")]):
+    xx = mx0 + k * (mw + 0.12)
+    card(sl, xx, oy + 0.2, mw, oh - 0.4)
+    texto(sl, xx + 0.18, oy + 0.33, mw - 0.36, 0.35, verbo, 15.5, cor, bold=True)
+    texto(sl, xx + 0.18, oy + 0.73, mw - 0.36, oh - 1.0, compl, 12.5, TXT2)
 
 # ══════════════════════════════════════════════════════════════
-# 5 · Cenário analisado
+# Etapa 3 · Cenário analisado
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("cenario", 5, "Etapa 3 · Cenário analisado", "Cenário analisado",
+sl, cor = base("cenario", "Etapa 3 · Cenário analisado", "Cenário analisado",
                "Navio Panamax atracado por boreste no terminal T-Grão, no canal do Porto de Santos",
                "Fontes: SILVA (2026a, seções 1.4, 1.7, 1.8 e 7), com dados de ACP (2026), PIANC (2017) e "
                "T-GRÃO (2026); PIANC (2025); MARINHA DO BRASIL (2025); SILVA (2026b)", etapa="cenario")
@@ -444,9 +453,9 @@ faixa(sl, ny, Y_FIM - ny,
       "crítica foi calculada com maré de 1,58 m e calado de 9 m.", cor, size=13)
 
 # ══════════════════════════════════════════════════════════════
-# 6 · Estudo de maré
+# Estudo de maré
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("cenario", 6, "Etapa 3 · Cenário analisado", "Estudo de maré em Santos",
+sl, cor = base("cenario", "Etapa 3 · Cenário analisado", "Estudo de maré em Santos",
                "A maré sobe até 1,68 m em menos de 6 horas e muda a altura do navio em relação ao cais",
                etapa="cenario")
 por_imagem(sl, "08_mare_dhn.png", **IMG)
@@ -464,9 +473,9 @@ texto(sl, X0, 7.06, 10.7, 0.3,
       "· gráfico elaborado com os valores da Tabela 7", 9.5, TXT3)
 
 # ══════════════════════════════════════════════════════════════
-# 7 · Layout de amarração de um Panamax (referência)
+# Layout de amarração de um Panamax (referência)
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("cenario", 7, "Etapa 3 · Cenário analisado", "Layout de amarração de um Panamax",
+sl, cor = base("cenario", "Etapa 3 · Cenário analisado", "Layout de amarração de um Panamax",
                "Cada grupo de cabos resiste principalmente a uma direção de esforço",
                "Fontes: SILVA (2026a, Figura 9, Tabela 5 e cap. 5), com base em OCIMF (2018); "
                "OCIMF (2018, seções 1.3 e 1.4); SOUTHERN PORTS (2026)", etapa="cenario")
@@ -494,9 +503,9 @@ card_texto(sl, rx, by, LARG - tw7 - 0.15, bh, "Por que este arranjo",
            cor, size=11.5, num=2)
 
 # ══════════════════════════════════════════════════════════════
-# 8 · Arranjo adotado na simulação
+# Arranjo adotado na simulação
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("cenario", 8, "Etapa 3 · Cenário analisado", "Arranjo adotado na simulação",
+sl, cor = base("cenario", "Etapa 3 · Cenário analisado", "Arranjo adotado na simulação",
                "Mesmo número de cabos do layout típico: 6 a vante e 6 a ré, em 5 cabeços",
                f"Fonte: {NOTEBOOK} · esquema com as posições longitudinais de buzinas e cabeços; "
                "buzinas desenhadas no costado de atracação", etapa="cenario")
@@ -513,50 +522,93 @@ for k, (rot, corpo) in enumerate([
     card_texto(sl, X0 + k * (cw + 0.15), cy, cw, Y_FIM - cy, rot, corpo, cor, size=12.5)
 
 # ══════════════════════════════════════════════════════════════
-# 9 · Como o trabalho foi conduzido
+# Etapa 4 · Como o trabalho foi conduzido
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("abordagem", 9, "Etapa 4 · Abordagem", "Como o trabalho foi conduzido",
+sl, cor = base("abordagem", "Etapa 4 · Abordagem", "Como o trabalho foi conduzido",
                "Quatro etapas, da caracterização do berço à leitura dos resultados",
-               "Fontes: SILVA (2026a; 2026b); OCIMF (2018, Figura 1.4). Base teórica do TF I: forças de vento "
-               "e corrente pelo MEG4 (F = ½·C·ρ·V²·A) e decomposição da tração (T·cos θ e T·sen θ)",
-               etapa="abordagem")
-sw, sh, sgap = (LARG - 3 * 0.45) / 4, 2.7, 0.45
+               "Fontes: SILVA (2026a, cap. 4, 6 e 7; 2026b); OCIMF (2018)", etapa="abordagem")
+sw, sh, sgap = (LARG - 3 * 0.45) / 4, 3.25, 0.45
 passos = [("Caracterização",
-           "Orientação do píer, espaçamento de cabeços e defensas, maré da DHN e dados do Panamax, "
-           "levantados no TF I."),
+           "Levantamento do píer T-Grão, dos cabeços e defensas, da maré (DHN) e das dimensões do Panamax.",
+           "parâmetros de entrada do modelo (TF I)"),
           ("Simulação",
-           "394 combinações de vento, corrente, onda (Hs, Tp), maré e direções, com calado de 9 m, "
-           "exportadas em três arquivos CSV."),
+           "394 combinações de vento, corrente, onda (Hs, Tp), maré e direções, com calado de 9 m.",
+           "três arquivos CSV com esforços e condições"),
           ("Pós-processamento",
-           "Notebook em Python (TF4.0): consolida os arquivos, calcula estatísticas, filtra riscos e "
-           "monta o envelope crítico e a matriz de operabilidade."),
+           "Notebook TF4.0 em Python: estatísticas, filtro de riscos, envelope crítico e matriz de "
+           "operabilidade.",
+           "gráficos e tabelas da etapa 5"),
           ("Geometria",
-           "Comprimento 3D e ângulo vertical de cada cabo, para calados de 9 e 14 m e marés de 0 e 1,58 m.")]
-for k, (rot, corpo) in enumerate(passos):
+           "Comprimento 3D e ângulo vertical de cada cabo, com calados de 9 e 14 m e marés de 0 e 1,58 m.",
+           "verificação do ângulo e da carga por cabo")]
+for k, (rot, feito, produto) in enumerate(passos):
     xx = X0 + k * (sw + sgap)
     card(sl, xx, Y_CONT, sw, sh)
     texto(sl, xx + 0.2, Y_CONT + 0.12, 0.8, 0.55, str(k + 1), 28, cor, bold=True)
     rotulo(sl, xx + 0.2, Y_CONT + 0.72, sw - 0.4, rot, cor)
-    texto(sl, xx + 0.2, Y_CONT + 1.05, sw - 0.4, sh - 1.15, corpo, 12, TXT2)
+    texto(sl, xx + 0.2, Y_CONT + 1.05, sw - 0.4, 1.2, feito, 12, TXT2)
+    forma(sl, MSO_SHAPE.RECTANGLE, xx + 0.2, Y_CONT + 2.32, sw - 0.4, 0.012, BORDA)
+    rotulo(sl, xx + 0.2, Y_CONT + 2.42, sw - 0.4, "Produto", cor, size=9)
+    texto(sl, xx + 0.2, Y_CONT + 2.68, sw - 0.4, sh - 2.78, produto, 12, TXT, bold=True)
     if k < 3:
         seta(sl, xx + sw + 0.12, Y_CONT + sh / 2 - 0.2, 0.21, 0.4, cor)
 ky = Y_CONT + sh + 0.2
-card(sl, X0, ky, LARG, Y_FIM - ky)
-rotulo(sl, X0 + 0.25, ky + 0.18, 6, "Critérios de avaliação", cor)
+kh = Y_FIM - ky
+card(sl, X0, ky, LARG, kh)
+rotulo(sl, X0 + 0.25, ky + 0.17, 8, "Base teórica e ferramentas", cor)
 kw = (LARG - 0.5) / 3
-for k, (v, leg) in enumerate([("55% MBL", "tração máxima nos cabos adotada no notebook; o MEG4 indica WLL de "
-                                          "55% (aço) e 50% (sintéticos) do MBL de projeto"),
-                              ("100% SWL", "força máxima nos cabeços; SWL de 75 t, obtido da razão "
-                                           "força/SWL do notebook"),
-                              ("≤ 25°", "ângulo vertical dos cabos em relação ao plano do cais (MEG4)")]):
+for k, (tit, conteudo, tam) in enumerate([
+        ("Forças ambientais (MEG4)", "F = ½ · C · ρ · V² · A", 17),
+        ("Componentes da tração no cabo", "T · cos θ (horizontal)   e   T · sen θ (vertical)", 14),
+        ("Ferramentas e dados", "software de simulação · Python (pandas, matplotlib) · Google Earth · "
+                                "tábua de marés da DHN", 11.5)]):
     xx = X0 + 0.25 + k * kw
-    texto(sl, xx, ky + 0.5, kw - 0.3, 0.5, v, 26, cor, bold=True)
-    texto(sl, xx, ky + 1.05, kw - 0.3, 0.75, leg, 11.5, TXT3)
+    texto(sl, xx, ky + 0.48, kw - 0.3, 0.3, tit, 12, TXT, bold=True)
+    texto(sl, xx, ky + 0.8, kw - 0.3, kh - 0.9, conteudo, tam, cor if tam > 12 else TXT2,
+          bold=tam > 12)
 
 # ══════════════════════════════════════════════════════════════
-# 10 · Resumo estatístico (tabela)
+# Etapa 4 · Critérios de avaliação
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("resultados", 10, "Etapa 5 · Resultados · Visão geral", "Resumo estatístico geral",
+sl, cor = base("abordagem", "Etapa 4 · Abordagem", "Critérios de avaliação",
+               "Três limites orientam a leitura dos resultados: tração nos cabos, força nos cabeços e ângulo",
+               "Fontes: OCIMF (2018, seção 1.4.2 e Figuras 1.3 e 1.4); SILVA (2026a, Tabela 5; 2026b) · MBL e "
+               "SWL de 75 t obtidos das razões tração/% MBL e força/% SWL do notebook", etapa="abordagem")
+ch3 = 3.95
+criterios = [
+    ("Cabos · tração", "≤ 55% MBL", "crit_mbl.png",
+     ["**Referência:** MEG4 (Figuras 1.3 e 1.4): limite de trabalho de 55% do MBL para cabos de aço e "
+      "50% para sintéticos.",
+      "**Neste estudo:** limite de 55%, com MBL de 75 t.",
+      "**Se exceder:** risco de ruptura do cabo e de snap-back."]),
+    ("Cabeços · força", "≤ 100% SWL", "crit_swl.png",
+     ["**Referência:** MEG4 (Figuras 1.3 e 1.4): cabeços em terra dimensionados pelo maior MBL de "
+      "projeto que o berço recebe.",
+      "**Neste estudo:** SWL de 75 t, igual ao MBL de um cabo.",
+      "**Se exceder:** risco de dano ou de arrancamento do cabeço."]),
+    ("Cabos · ângulo vertical", "θ ≤ 25°", "crit_angulo.png",
+     ["**Referência:** MEG4, conforme SILVA (2026a, Tabela 5): até 25° em relação ao plano do cais.",
+      "**Neste estudo:** ângulo de cada cabo para calados de 9 e 14 m e marés de 0 e 1,58 m.",
+      "**Se exceder:** a parcela horizontal (T · cos θ) diminui e o cabo segura menos o navio."]),
+]
+for k, (rot, kpi, img, corpo) in enumerate(criterios):
+    xx = X0 + k * (cw + 0.15)
+    card(sl, xx, Y_CONT, cw, ch3)
+    selo(sl, xx + 0.2, Y_CONT + 0.15, k + 1, cor)
+    rotulo(sl, xx + 0.57, Y_CONT + 0.19, cw - 0.8, rot, cor)
+    texto(sl, xx + 0.2, Y_CONT + 0.5, cw - 0.4, 0.5, kpi, 27, cor, bold=True)
+    figura(sl, img, xx + 0.15, Y_CONT + 1.02, cw - 0.3, 1.2)
+    texto(sl, xx + 0.2, Y_CONT + 2.32, cw - 0.4, ch3 - 2.42, corpo, 11.5, TXT2, entre=4)
+ay = Y_CONT + ch3 + 0.15
+faixa(sl, ay, Y_FIM - ay,
+      "**Ponto de atenção:** se os cabos simulados forem sintéticos (PPL/PE, estudados no TF I), o MEG4 "
+      "indica 50% do MBL. Com esse limite, entre 58 e 93 condições ficariam acima (estimativa pelo histograma).",
+      cor, size=12.5)
+
+# ══════════════════════════════════════════════════════════════
+# Etapa 5 · Resumo estatístico (tabela)
+# ══════════════════════════════════════════════════════════════
+sl, cor = base("resultados", "Etapa 5 · Resultados · Visão geral", "Resumo estatístico geral",
                "A mediana fica em 31,5% MBL, mas o percentil 90 já ultrapassa o limite de 55%",
                f"Fonte: {NOTEBOOK}, tabela “Resumo estatístico geral” (percentis 50, 90, 95 e 99)",
                etapa="resultados")
@@ -587,9 +639,9 @@ colunas_texto(sl, cor,
               "31,5% MBL", "mediana da tração nos cabos", rot1="O que a tabela lê")
 
 # ══════════════════════════════════════════════════════════════
-# 11–13 · Visão geral e fatores de carga
+# Visão geral e fatores de carga
 # ══════════════════════════════════════════════════════════════
-slide_grafico(11, "Visão geral", "Distribuição dos esforços",
+slide_grafico("Visão geral", "Distribuição dos esforços",
               "58 das 394 condições (14,7%) passam do limite nos cabos; nos cabeços, apenas 2",
               "01_histogramas.png",
               ["Número de condições em cada faixa de carregamento: % MBL nos cabos e % SWL nos "
@@ -601,7 +653,7 @@ slide_grafico(11, "Visão geral", "Distribuição dos esforços",
                "pontual nos cabeços."],
               "58 de 394", "condições acima de 55% MBL (14,7%)")
 
-slide_grafico(12, "Fatores de carga", "Influência da maré",
+slide_grafico("Fatores de carga", "Influência da maré",
               "Só o cabo 9 passa de 55% MBL, com maré alta; o cabeço S excede o SWL com maré baixa",
               "02_influencia_mare.png",
               ["Maior esforço de cada cabo (círculos) e de cada cabeço (triângulos); a cor indica o "
@@ -614,21 +666,28 @@ slide_grafico(12, "Fatores de carga", "Influência da maré",
                "todos os elementos."],
               "75,3% MBL", "pico do cabo 9, ligado ao cabeço N")
 
-slide_grafico(13, "Fatores de carga", "Clima ou arranjo de cabos?",
-              "Nenhuma variável ambiental isolada explica a tração; a sobrecarga se concentra no cabo 9",
-              "04_correlacao_boxplot.png",
-              ["À esquerda, a correlação linear entre ambiente e esforços (perto de ±1 = forte; perto de "
-               "0 = fraca). À direita, a % MBL agrupada pelo cabo mais carregado em cada condição.",
+# Clima ou arranjo: dois gráficos empilhados (A e B), maiores e mais legíveis
+sl, cor = base("resultados", "Etapa 5 · Resultados · Fatores de carga", "Clima ou arranjo de cabos?",
+               "Nenhuma variável ambiental isolada explica a tração; a sobrecarga se concentra no cabo 9",
+               etapa="resultados")
+hh = (IMG["h"] - 0.15) / 2
+orig_a = por_imagem(sl, "04a_correlacao_barras.png", IMG["x"], IMG["y"], IMG["w"], hh, pad=0.1)
+orig_b = por_imagem(sl, "04b_boxplot_cabos.png", IMG["x"], IMG["y"] + hh + 0.15, IMG["w"], hh, pad=0.1)
+colunas_texto(sl, cor,
+              ["**(A)** Correlação linear entre ambiente e esforços: perto de ±1, forte; perto de 0, fraca.",
+               "**(B)** % MBL das 394 condições, agrupada pelo cabo mais carregado.",
                "**Intuito:** separar o efeito do clima do efeito do arranjo."],
-              ["Cada variável ambiental tem correlação fraca com a tração nos cabos (|r| < 0,1). As "
-               "direções não entram na matriz.",
-               "No boxplot, apenas o cabo 9 ultrapassa 55%, o que aponta para o arranjo dos cabos."],
-              "r = 0,70", "correlação entre % MBL e % SWL")
+              ["**(A)** Nenhuma variável explica sozinha a tração; nos cabeços, vento (0,25) e corrente "
+               "(0,20) pesam um pouco mais.",
+               "**(B)** Só o cabo 9 passa de 55%, o que aponta para o arranjo dos cabos."],
+              "|r| < 0,1", "correlação do ambiente com a tração nos cabos", rot1="O que os gráficos leem")
+texto(sl, X0, 7.06, 10.7, 0.3, nota_imagem(orig_a and orig_b) + " · direções não entram na correlação",
+      9.5, TXT3)
 
 # ══════════════════════════════════════════════════════════════
-# 14 · Combinações críticas (tabelas)
+# Riscos
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("resultados", 14, "Etapa 5 · Resultados · Riscos", "Combinações críticas",
+sl, cor = base("resultados", "Etapa 5 · Resultados · Riscos", "Combinações críticas",
                "O cabo 9 é o elemento crítico nas cinco piores condições; o cabeço S excede o SWL com vento forte",
                f"Fonte: {NOTEBOOK}, bloco “Filtro de riscos e piores combinações”", etapa="resultados")
 card(sl, **IMG)
@@ -662,10 +721,7 @@ colunas_texto(sl, cor,
                "As duas violações do cabeço S ocorrem com vento forte (36,7 e 49,1 nós)."],
               "5 de 5", "piores condições têm o cabo 9 como crítico", rot1="O que a tabela lê")
 
-# ══════════════════════════════════════════════════════════════
-# 15–16 · Riscos
-# ══════════════════════════════════════════════════════════════
-slide_grafico(15, "Riscos", "Envelope crítico: vento × corrente",
+slide_grafico("Riscos", "Envelope crítico: vento × corrente",
               "A maioria dos cabos atinge o pico com vento forte; o cabo 9, com corrente forte e maré alta",
               "05_envelope_critico.png",
               ["Cada bolha é a condição de pico de um elemento, posicionada pela corrente (eixo x) e "
@@ -676,7 +732,7 @@ slide_grafico(15, "Riscos", "Envelope crítico: vento × corrente",
                "junto com o cabo 9, que está preso a ele."],
               "8,2 nós", "vento na condição de pico do cabo 9")
 
-slide_grafico(16, "Riscos", "Matriz de operabilidade",
+slide_grafico("Riscos", "Matriz de operabilidade",
               "19 das 20 faixas de vento e corrente têm ao menos uma condição acima do limite",
               "06_matriz_operabilidade.png",
               ["As condições são agrupadas em faixas de vento (10 nós) e corrente (0,5 nó); cada célula "
@@ -688,7 +744,7 @@ slide_grafico(16, "Riscos", "Matriz de operabilidade",
               "19 de 20", "faixas com pior caso acima de 55% MBL")
 
 # ══════════════════════════════════════════════════════════════
-# 17–18 · Geometria dos cabos
+# Geometria dos cabos
 # ══════════════════════════════════════════════════════════════
 GEO = [  # cabo, buzina, cabeço, comp 1,58 m, âng 1,58 m, comp 0 m, âng 0 m
     (1, 2, "S", 24.18, 15.55, 23.80, 11.88), (2, 3, "S", 23.68, 15.88, 23.30, 12.14),
@@ -711,7 +767,7 @@ def legenda_geo(sl, y):
         texto(sl, xx + 0.37, y - 0.03, 2.9, 0.3, txt, 11, TXT3)
 
 
-sl, cor = base("resultados", 17, "Etapa 5 · Resultados · Geometria", "Geometria dos cabos · maré de 1,58 m",
+sl, cor = base("resultados", "Etapa 5 · Resultados · Geometria", "Geometria dos cabos · maré de 1,58 m",
                "Pelo cálculo do notebook, todos os cabos ficam abaixo do limite de 25° do MEG4",
                f"Fonte: {NOTEBOOK}, calcular_geometria_amarracao (calado 9 m, maré 1,58 m)",
                etapa="resultados")
@@ -732,7 +788,7 @@ colunas_texto(sl, cor,
                "Esses valores dependem da revisão da geometria (próximos passos)."],
               "21,6° < 25°", "maior ângulo vertical (cabo 5) e limite do MEG4", rot1="O que a tabela lê")
 
-sl, cor = base("resultados", 18, "Etapa 5 · Resultados · Geometria", "Geometria dos cabos · maré de 0 m",
+sl, cor = base("resultados", "Etapa 5 · Resultados · Geometria", "Geometria dos cabos · maré de 0 m",
                "A maré baixa reduz o ângulo vertical de todos os cabos em 2,2° a 4,9°",
                f"Fonte: {NOTEBOOK}, calcular_geometria_amarracao (calado 9 m, maré 0 m) · Δ em relação à "
                "maré de 1,58 m · calado de 14 m pela mesma função", etapa="resultados")
@@ -753,9 +809,9 @@ colunas_texto(sl, cor,
               "−2,2° a −4,9°", "variação do ângulo vertical com a maré baixa", rot1="O que a tabela lê")
 
 # ══════════════════════════════════════════════════════════════
-# 19 · Conclusões parciais
+# Etapa 6 · Conclusões parciais
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("conclusoes", 19, "Etapa 6 · Conclusões", "Conclusões parciais",
+sl, cor = base("conclusoes", "Etapa 6 · Conclusões", "Conclusões parciais",
                "Os resultados respondem ao objetivo desta etapa",
                "Fontes: SILVA (2026a; 2026b)", etapa="conclusoes")
 achados = [
@@ -785,9 +841,60 @@ texto(sl, X0 + 0.32, py + 0.56, LARG - 0.6, Y_FIM - py - 0.66,
       "acompanhar prioritariamente.", 14, TXT2)
 
 # ══════════════════════════════════════════════════════════════
-# 20 · Próximos passos
+# Alternativas para aumentar a segurança operacional
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("conclusoes", 20, "Etapa 6 · Conclusões", "Próximos passos",
+sl, cor = base("conclusoes", "Etapa 6 · Conclusões", "Alternativas para aumentar a segurança",
+               "Medidas voltadas aos pontos críticos: cabo 9, cabeço S e limites de operação",
+               "Fontes: OCIMF (2018, seções 1.3 e 1.4; Figuras 1.3 e 1.4); PIANC (2025, cap. 4); "
+               "SILVA (2026a, seção 2.2.1)", etapa="conclusoes")
+POR_QUE = [
+    "o cabo 9 chega a 75,3% MBL e o cabeço S recebe 4 dos 12 cabos.",
+    "o cabeço S chega a 110,8% SWL, cerca de 83 t para SWL de 75 t.",
+    "19 de 20 faixas passam do limite, e a maré varia até 1,68 m.",
+    "a tração não é medida, e o risco se concentra em dois elementos.",
+]
+alternativas = [
+    ("Arranjo dos cabos", "C1 · C2",
+     ["•  Reduzir a diferença de rigidez entre os cabos 9 e 10, que dividem o cabeço N (comprimento, "
+      "material ou pré-tensão).",
+      "•  Redistribuir os 4 cabos do cabeço S entre cabeços vizinhos.",
+      "•  Manter um arranjo equilibrado entre proa e popa (OCIMF, 2018, seção 1.4.1)."]),
+    ("Capacidade do berço", "C2",
+     ["•  Verificar a capacidade do cabeço S, que recebe 4 cabos: nos exemplos do MEG4, pontos com "
+      "4 ganchos têm SWL de 240% a 310% do MBL; um único gancho ou cabeço, de 100% a 118% "
+      "(OCIMF, 2018, Figuras 1.3 e 1.4).",
+      "•  Avaliar cabeços de maior capacidade ou adicionais (PIANC, 2025, seção 4.9)."]),
+    ("Gestão da operação", "C3 · C4",
+     ["•  Ajustar a tensão dos cabos ao longo da maré e do carregamento (OCIMF, 2018, seção 1.3).",
+      "•  Definir limites de paragem com vento, corrente, Hs, direção e maré.",
+      "•  Retirar os cabos de uso quando a resistência residual chegar a 75% do MBL de projeto "
+      "(OCIMF, 2018, Figuras 1.3 e 1.4)."]),
+    ("Monitoramento contínuo", "C1 · C2",
+     ["•  Medir a carga em tempo real com cabeços instrumentados (smart bollards) ou ganchos com "
+      "sensor de carga (PIANC, 2025, seção 4.10.6).",
+      "•  Aplicar a visão computacional proposta no TF, começando pelo cabo 9 e pelo cabeço S."]),
+]
+aw = (LARG - 0.15) / 2
+ah = (Y_FIM - Y_CONT - 0.15) / 2
+for k, (rot, chip, corpo) in enumerate(alternativas):
+    xx = X0 + (k % 2) * (aw + 0.15)
+    yy = Y_CONT + (k // 2) * (ah + 0.15)
+    card(sl, xx, yy, aw, ah)
+    selo(sl, xx + 0.2, yy + 0.15, k + 1, cor)
+    rotulo(sl, xx + 0.57, yy + 0.19, aw - 2.4, rot, cor, size=10.5)
+    cx = xx + aw - 1.75
+    forma(sl, MSO_SHAPE.ROUNDED_RECTANGLE, cx, yy + 0.14, 1.55, 0.3, tint(cor, 0.16), raio=0.5)
+    texto(sl, cx, yy + 0.14, 1.55, 0.3, f"responde a {chip}", 10, TXT2, bold=True,
+          align=PP_ALIGN.CENTER, ancora=MSO_ANCHOR.MIDDLE, linha=1.0)
+    texto(sl, xx + 0.25, yy + 0.56, aw - 0.45, ah - 1.11, corpo, 12, TXT2, entre=4)
+    forma(sl, MSO_SHAPE.RECTANGLE, xx + 0.25, yy + ah - 0.52, aw - 0.5, 0.012, BORDA)
+    texto(sl, xx + 0.25, yy + ah - 0.45, aw - 0.45, 0.38, f"**Por quê:** {POR_QUE[k]}", 11.5, TXT3,
+          italic=True)
+
+# ══════════════════════════════════════════════════════════════
+# Próximos passos
+# ══════════════════════════════════════════════════════════════
+sl, cor = base("conclusoes", "Etapa 6 · Conclusões", "Próximos passos",
                "Do diagnóstico parcial à entrega final",
                "Próximos passos propostos a partir dos resultados desta etapa e do plano de SILVA (2026a)",
                etapa="conclusoes")
@@ -814,16 +921,16 @@ passos_a = ["•  Simular o calado carregado (14 m) e a maré mínima de 2025 (�
             "•  Incluir Hs, direções e maré na matriz de operabilidade",
             "•  Avaliar o efeito de navios passantes no canal"]
 passos_b = ["•  Revisar o cálculo de geometria (lado das buzinas e posição dos cabeços) e validá-lo com o berço real",
-            "•  Testar ajustes no arranjo: comprimento ou pré-tensão do cabo 9 e menos cabos no cabeço S",
+            "•  Simular as alternativas de arranjo e de capacidade para medir o ganho de segurança",
             "•  Desenvolver o monitoramento dos cabos por visão computacional e machine learning"]
 bw = (LARG - 0.75) / 2
 texto(sl, X0 + 0.25, ly + 0.55, bw, Y_FIM - ly - 0.65, passos_a, 12.5, TXT2, entre=7)
 texto(sl, X0 + 0.5 + bw, ly + 0.55, bw, Y_FIM - ly - 0.65, passos_b, 12.5, TXT2, entre=7)
 
 # ══════════════════════════════════════════════════════════════
-# 21 · Referências (ABNT NBR 6023)
+# Referências (ABNT NBR 6023)
 # ══════════════════════════════════════════════════════════════
-sl, cor = base("referencias", 21, "Apresentação", "Referências",
+sl, cor = base("referencias", "Apresentação", "Referências",
                "Fontes citadas nos slides, conforme a ABNT NBR 6023")
 REFS_A = [
     "ACP – AUTORIDAD DEL CANAL DE PANAMÁ. **OP Notice to Shipping N-1-2026**. Panamá, 2026.",
@@ -855,14 +962,14 @@ for k, refs in enumerate((REFS_A, REFS_B)):
     texto(sl, xx + 0.25, Y_CONT + 0.22, rw - 0.5, Y_FIM - Y_CONT - 0.35, refs, 12, TXT2, entre=10)
 
 # ══════════════════════════════════════════════════════════════
-# 22 · Encerramento
+# Encerramento
 # ══════════════════════════════════════════════════════════════
 sl = prs.slides.add_slide(prs.slide_layouts[6])
 capa_fundo(sl)
 texto(sl, X0, 2.25, 11, 1.1, "Obrigado pela atenção", 50, TXT, bold=True)
 texto(sl, X0, 3.65, 11, 1.1, "Perguntas?", 50, TXT, bold=True)
 texto(sl, X0 + 0.05, 5.0, 8, 0.4, "Gustavo Guilherme Silva · NUSP 11820555", 15, TXT2)
-numero(sl, TOTAL)
+numero(sl)
 
 assert len(prs.slides) == TOTAL, len(prs.slides)
 prs.save(SAIDA)
