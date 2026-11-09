@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import matplotlib.transforms
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import LinearSegmentedColormap, Normalize, TwoSlopeNorm
 from matplotlib.lines import Line2D
@@ -26,7 +27,8 @@ OUT = os.path.join(BASE, "imagens_recriadas")
 os.makedirs(OUT, exist_ok=True)
 
 plt.rcParams.update({
-    "font.family": "DejaVu Sans", "font.size": 8.5,
+    # STIX é a fonte com desenho de Times que acompanha o matplotlib (Times New Roman nos slides)
+    "font.family": "STIXGeneral", "mathtext.fontset": "stix", "font.size": 9.5,
     "axes.titlesize": 9.5, "axes.titleweight": "bold", "axes.titlecolor": "#1C2430",
     "axes.edgecolor": "#B9B2A6", "axes.labelcolor": "#3A4250",
     "xtick.color": "#4A5260", "ytick.color": "#4A5260",
@@ -43,6 +45,19 @@ DPI = 220
 
 def br(v, d=1):
     return f"{v:.{d}f}".replace(".", ",")
+
+
+def virgula(eixo, d=None):
+    """Rótulos numéricos do eixo com vírgula decimal (padrão brasileiro)."""
+    from matplotlib.ticker import FuncFormatter
+
+    def f(v, _):
+        if d is None:
+            txt = f"{v:g}"
+        else:
+            txt = f"{v:.{d}f}"
+        return txt.replace("-", "−").replace(".", ",")
+    eixo.set_major_formatter(FuncFormatter(f))
 
 
 def save(fig, name):
@@ -194,6 +209,7 @@ def influencia_mare():
     ax.legend(loc="upper left")
 
     cb = fig.colorbar(ScalarMappable(norm=norm, cmap=cmap), ax=axs, fraction=0.035, pad=0.02)
+    virgula(cb.ax.yaxis, 1)
     cb.set_label("Nível da maré [m]")
     cb.outline.set_visible(False)
     save(fig, "02_influencia_mare.png")
@@ -224,6 +240,7 @@ def correlacao_boxplot():
         s.set_visible(False)
     a1.set_title("Correlação: ambiente × esforços", loc="left")
     cb = fig.colorbar(im, ax=a1, fraction=0.046, pad=0.03, shrink=0.75)
+    virgula(cb.ax.yaxis, 2)
     cb.outline.set_visible(False)
     cb.ax.tick_params(labelsize=7)
 
@@ -294,6 +311,7 @@ def envelope():
             ax.annotate(txt, (c, v), xytext=(raio + 3, 0), textcoords="offset points",
                         fontsize=6.5, va="center", color=ESC)
         ax.set_xlim(0.75, 1.92)
+        virgula(ax.xaxis, 1)
         ax.set_ylim(0, 57)
         ax.set_xlabel("Corrente [nós]")
         ax.set_ylabel("Vento [nós]")
@@ -346,7 +364,104 @@ def operabilidade():
     save(fig, "06_matriz_operabilidade.png")
 
 
+# ─────────────────────────────────────────────────────────────
+# 07 · Arranjo típico de amarração de um Panamax (4-1-1 por extremidade)
+#      Esquema elaborado a partir da Figura 9 do relatório do TF I
+# ─────────────────────────────────────────────────────────────
+def layout_referencia():
+    COR_L, COR_T, COR_E = "#7F9CC8", "#CC6A58", "#2F8F86"
+    gap, boca, y_cab = 12.0, 30.0, -4.0
+    y0, yc = gap, gap + boca / 2
+    fig, ax = plt.subplots(figsize=(11.7, 2.75))
+    ax.axhspan(-17, 0, color="#E9E3D8", lw=0)
+    ax.text(-178, -13.5, "CAIS", fontsize=9, color="#8A8275", weight="bold")
+    # casco simplificado: proa à esquerda
+    casco = [(-112, yc), (-104, y0 + 3), (-90, y0), (95, y0), (108, y0 + 4), (112, y0 + 8),
+             (112, y0 + boca - 8), (108, y0 + boca - 4), (95, y0 + boca), (-90, y0 + boca),
+             (-104, y0 + boca - 3)]
+    ax.add_patch(Polygon(casco, closed=True, fc="#F4EFE7", ec="#A49C90", lw=1.0, zorder=1))
+    ax.text(0, yc, "4 lançantes + 1 través + 1 espringue em cada extremidade (6 + 6 cabos)",
+            ha="center", va="center", fontsize=10, color="#5E574D")
+    ax.text(-97, yc, "PROA", ha="center", va="center", fontsize=8.5, weight="bold", color="#A49C90")
+    ax.text(97, yc, "POPA", ha="center", va="center", fontsize=8.5, weight="bold", color="#A49C90")
+    for x in range(-165, 166, 15):
+        ax.plot(x, y_cab, "o", ms=2.6, color="#B9B2A6", zorder=2)
+
+    def cabo(xa, ya, xb, cor, lw=1.6):
+        ax.plot([xa, xb], [ya, y_cab], color=cor, lw=lw, zorder=3)
+        ax.plot(xb, y_cab, "o", ms=5.5, color="#2F3A48", zorder=4)
+
+    for s in (-1, 1):                     # -1 = proa (esquerda), +1 = popa (direita)
+        for xa, ya, xb in [(108, yc - 3, 165), (108, yc + 3, 165), (104, y0 + 3, 150), (101, y0 + 2, 150)]:
+            cabo(s * xa, ya, s * xb, COR_L)
+        cabo(s * 88, y0, s * 90, COR_T, lw=2.2)
+        cabo(s * 70, y0, s * 30, COR_E, lw=2.0)
+    lab = dict(fontsize=8.5, weight="bold", ha="center", va="center", zorder=6,
+               bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.92))
+    for s, nome in ((-1, "proa"), (1, "popa")):
+        ax.text(s * 143, 13, f"lançantes\nde {nome}", color="#3F5F96", **lab)
+        ax.text(s * 89, 4.5, "través", color=COR_T, **lab)
+        ax.text(s * 50, 4.5, "espringue", color=COR_E, **lab)
+    seta = dict(arrowstyle="<->", color="#5E574D", lw=1.1)
+    ax.annotate("", xy=(-125, y0 + boca + 10), xytext=(-125, y0 + boca + 1), arrowprops=seta)
+    ax.text(-121, y0 + boca + 5.5, "afastamento (sway): través e lançantes", fontsize=9.5,
+            va="center", color="#5E574D")
+    ax.annotate("", xy=(55, y0 + boca + 5.5), xytext=(25, y0 + boca + 5.5), arrowprops=seta)
+    ax.text(59, y0 + boca + 5.5, "avanço e recuo (surge): espringues", fontsize=9.5,
+            va="center", color="#5E574D")
+    ax.text(178, -13.5, "Esquema fora de escala na direção transversal", ha="right",
+            fontsize=8, style="italic", color="#8A8275")
+    ax.set_xlim(-180, 180)
+    ax.set_ylim(-17, y0 + boca + 12)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    save(fig, "07_layout_panamax.png")
+
+
+# ─────────────────────────────────────────────────────────────
+# 08 · Maré em Santos, 2025 (Tabela 7 do TF I, dados da DHN)
+# ─────────────────────────────────────────────────────────────
+MARE_2025 = [  # mês, mínima, máxima, média [m]
+    ("jan", -0.12, 1.51, 0.77), ("fev", -0.16, 1.52, 0.77), ("mar", -0.12, 1.49, 0.77),
+    ("abr", -0.01, 1.49, 0.78), ("mai", 0.06, 1.46, 0.78), ("jun", 0.07, 1.43, 0.77),
+    ("jul", -0.02, 1.44, 0.77), ("ago", -0.10, 1.48, 0.77), ("set", -0.14, 1.50, 0.78),
+    ("out", -0.09, 1.50, 0.77), ("nov", 0.02, 1.50, 0.78), ("dez", 0.03, 1.48, 0.77)]
+
+
+def mare_dhn():
+    meses = [m[0] for m in MARE_2025]
+    mn = np.array([m[1] for m in MARE_2025])
+    mx = np.array([m[2] for m in MARE_2025])
+    md = np.array([m[3] for m in MARE_2025])
+    x = np.arange(12)
+    fig, ax = plt.subplots(figsize=FIG, layout="constrained")
+    ax.bar(x, mx - mn, bottom=mn, width=0.56, color="#BFDCD7", edgecolor="#2F8F86", lw=0.8,
+           label="Faixa mensal (mínima a máxima)", zorder=2)
+    ax.plot(x, md, "o", ms=5, color="#2F8F86", label="Média mensal", zorder=3)
+    ax.axhline(1.58, color="#7A63C2", ls="--", lw=1.2, label="Maré alta usada na geometria (1,58 m)")
+    ax.axhline(0, color="#7B8290", lw=0.9, zorder=1)
+    ax.plot([1, 1], [-0.16, 1.52], ls="none", marker="D", ms=5.5, color="#C8605A",
+            label="Extremos de 2025 (fev): −0,16 m e 1,52 m", zorder=4)
+    ax.text(-0.012, -0.5, "amplitude", fontsize=9, color="#7B8290", va="center", ha="right",
+            transform=matplotlib.transforms.blended_transform_factory(ax.transAxes, ax.transData))
+    for xi, a, b in zip(x, mn, mx):
+        ax.text(xi, -0.5, br(b - a, 2), ha="center", va="center", fontsize=9,
+                weight="bold" if xi in (1, 5) else "normal", color="#3A4250")
+    ax.set_xticks(x, meses)
+    ax.set_yticks([0, 0.5, 1.0, 1.5, 2.0])
+    virgula(ax.yaxis, 1)
+    ax.set_xlim(-0.6, 11.6)
+    ax.set_ylabel("Nível da maré [m]")
+    ax.set_ylim(-0.65, 2.25)
+    ax.set_title("Maré prevista em Santos em 2025: faixa de cada mês [m]", loc="left")
+    ax.grid(axis="x", visible=False)
+    ax.legend(loc="upper left", fontsize=8.5, ncol=2)
+    save(fig, "08_mare_dhn.png")
+
+
 if __name__ == "__main__":
+    layout_referencia()
+    mare_dhn()
     plano_amarracao()
     histogramas()
     influencia_mare()
