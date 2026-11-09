@@ -63,16 +63,23 @@ def plano_amarracao():
              (21, 99.4, -12.1), (22, 87.0, -15.1), (23, 73.1, -16.1), (24, 72.0, -16.1),
              (25, 20.9, -16.0), (26, -30.7, -16.1), (27, -55.3, -16.0), (28, -56.4, -16.0),
              (29, -86.1, -16.1), (30, -99.6, -15.3), (31, -113.2, -7.5), (32, -113.2, -5.9)]
-    yc = 1.4 + 16.2                     # linha de encosto + meia-boca (notebook)
-    pos = {n: (-x, yc - y) for n, x, y in casco}   # espelhamento X e atracação boreste
+    # Esquema: posições longitudinais (X) do notebook, com o X espelhado como no notebook.
+    # Na transversal o desenho é fora de escala: o vão entre costado e cais foi ampliado
+    # para que as linhas fiquem visíveis, e as buzinas ficam no costado de atracação.
+    GAP = 10.0                          # vão desenhado entre a face do cais e o costado
+    yc = GAP + 16.2                     # linha de centro do navio no desenho
+    contorno = [(-x, yc - y) for _, x, y in casco]
+    pos = {n: (-x, yc - abs(y)) for n, x, y in casco}
     plano = [(2, "S"), (3, "S"), (14, "A"), (15, "A"), (17, "B"), (18, "B"),
              (23, "G"), (24, "G"), (28, "N"), (29, "N"), (31, "S"), (32, "S")]
-    y_cab = 3.5
+    y_cab = -3.5                        # cabeços no cais, atrás da face
 
-    fig, ax = plt.subplots(figsize=(11.7, 2.35))
+    fig, ax = plt.subplots(figsize=(11.7, 2.6))
     ax.axhspan(-14, 0, color="#E9E3D8", lw=0)
-    ax.text(-148, -9.5, "CAIS", fontsize=8, color="#8A8275", weight="bold")
-    ax.add_patch(Polygon([pos[n] for n, _, _ in casco], closed=True,
+    ax.text(-148, -12, "CAIS", fontsize=8, color="#8A8275", weight="bold")
+    ax.text(-148, 46, "Esquema fora de escala na direção transversal", ha="left", va="center",
+            fontsize=7, style="italic", color="#8A8275")
+    ax.add_patch(Polygon(contorno, closed=True,
                          fc="#F4EFE7", ec="#A49C90", lw=1.0, zorder=1))
     ax.text(0, yc, "Navio Panamax · LOA 225 m · atracado por boreste",
             ha="center", va="center", fontsize=8, color="#7A7266")
@@ -81,32 +88,34 @@ def plano_amarracao():
     for c, x in cabecos_x.items():
         if c in usados:
             ax.plot(x, y_cab, "o", ms=6, color=ESC, zorder=4)
-            ax.text(x, -6.5, c, ha="center", fontsize=8.5, weight="bold", color=ESC)
+            ax.text(x, -10.5, c, ha="center", fontsize=8.5, weight="bold", color=ESC)
         else:
             ax.plot(x, y_cab, "o", ms=2.5, color="#B9B2A6", zorder=2)
+    ax.text(-100, yc, "PROA", ha="center", va="center", fontsize=7.5, weight="bold", color="#A49C90")
+    ax.text(100, yc, "POPA", ha="center", va="center", fontsize=7.5, weight="bold", color="#A49C90")
 
     for i, (fl, cab) in enumerate(plano, start=1):
         (x0, y0), x1 = pos[fl], cabecos_x[cab]
         critico = i == 9
         ax.plot([x0, x1], [y0, y_cab], color=LIM if critico else "#7F9CC8",
-                lw=2.4 if critico else 1.1, zorder=5 if critico else 3)
+                lw=2.4 if critico else 1.2, zorder=5 if critico else 3)
 
     # rótulos (pares que vão ao mesmo cabeço recebem um rótulo só)
-    rot = {"1–2": (2, 3, "S"), "3–4": (14, 15, "A"), "5–6": (17, 18, "B"),
-           "7–8": (23, 24, "G"), "9": (28, 28, "N"), "10": (29, 29, "N"), "11–12": (31, 32, "S")}
+    rot = {"1–2, 11–12": (2, 32, "S"), "3–4": (14, 15, "A"), "5–6": (17, 18, "B"),
+           "7–8": (23, 24, "G"), "9": (28, 28, "N"), "10": (29, 29, "N")}
     for txt, (fa, fb, cab) in rot.items():
-        xm = (pos[fa][0] + pos[fb][0]) / 2 * 0.55 + cabecos_x[cab] * 0.45
-        ym = (pos[fa][1] + pos[fb][1]) / 2 * 0.55 + y_cab * 0.45
+        xm = (pos[fa][0] + pos[fb][0]) / 2 * 0.5 + cabecos_x[cab] * 0.5
+        ym = (pos[fa][1] + pos[fb][1]) / 2 * 0.5 + y_cab * 0.5
         crit = txt == "9"
         ax.text(xm, ym, txt, ha="center", va="center", fontsize=7.5, weight="bold",
                 color=LIM if crit else "#3F5F96", zorder=6,
                 bbox=dict(boxstyle="round,pad=0.18", fc="white", ec="none", alpha=0.9))
 
     ax.legend(handles=[Line2D([], [], color=LIM, lw=2.4, label="Cabo 9 (buzina 28 → N): crítico"),
-                       Line2D([], [], color="#7F9CC8", lw=1.1, label="Demais cabos")],
+                       Line2D([], [], color="#7F9CC8", lw=1.2, label="Demais cabos")],
               loc="upper right", bbox_to_anchor=(1.0, 1.12), ncol=2, fontsize=7.5)
     ax.set_xlim(-150, 150)
-    ax.set_ylim(-12, 38)
+    ax.set_ylim(-14, 48)
     ax.set_aspect("equal")
     ax.axis("off")
     save(fig, "00_plano_amarracao.png")
