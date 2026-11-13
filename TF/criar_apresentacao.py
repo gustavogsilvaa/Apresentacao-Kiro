@@ -374,13 +374,25 @@ sl, cor = base("motivacao", "Etapa 1 · Motivação", "Por que estudar a amarra�
                "Durante o carregamento, o navio é mantido no berço apenas pelo sistema de amarração",
                etapa="motivacao")
 tw_ = (LARG - 0.45) / 4
-for k, (v, leg) in enumerate([(">100 Mt", "de carga por ano no Porto de Santos (BRASIL, 2026)."),
-                              ("14 de 60", "berços dedicados a granéis vegetais (SILVA, 2026a)."),
-                              ("US$ 34 mi", "em sinistros com equipamentos de amarração em 20 anos "
-                                            "(UK P&I CLUB, 2009)."),
-                              ("até 40%", "de aumento da tração nos cabos com a passagem de outro navio "
-                                          "(SILVA, 2026a).")]):
-    kpi_tile(sl, X0 + k * (tw_ + 0.15), Y_CONT, tw_, 1.4, v, leg, cor)
+for k, (v, leg, fonte_kpi) in enumerate([
+        (">100 Mt", "de carga por ano no Porto de Santos.", "(BRASIL, 2026)"),
+        ("18 de 60", "berços dedicados a granéis sólidos.", "(APS, [2026]; BRASIL, 2019)"),
+        ("US$ 34 mi", "em sinistros com equipamentos de amarração em 20 anos.", "(UK P&I CLUB, 2009)"),
+        ("até 40%", "de aumento da tração nos cabos com a passagem de outro navio.",
+         "(SREEDEVI; NALLAYARASU, 2023)")]):
+    xk = X0 + k * (tw_ + 0.15)
+    kpi_tile(sl, xk, Y_CONT, tw_, 1.4, v, "", cor)
+    tb = sl.shapes.add_textbox(Inches(xk + 0.2), Inches(Y_CONT + 0.7), Inches(tw_ - 0.4), Inches(0.62))
+    tf_ = tb.text_frame
+    tf_.word_wrap = True
+    tf_.margin_left = tf_.margin_right = tf_.margin_top = tf_.margin_bottom = 0
+    p_ = tf_.paragraphs[0]
+    p_.line_spacing = 1.0
+    runs(p_, leg, 11.5, TXT3)
+    p2 = tf_.add_paragraph()
+    p2.line_spacing = 1.0
+    p2.space_before = Pt(2)
+    runs(p2, fonte_kpi, 10, TXT3, italic=True)
 cy, mh = Y_CONT + 1.55, 1.65
 for k, (rot, corpo) in enumerate([
         ("Segurança",
@@ -1151,6 +1163,10 @@ sl, cor = base("referencias", "Apresentação", "Referências",
                "Fontes citadas nos slides, conforme a ABNT NBR 6023")
 REFS_A = [
     "ACP – AUTORIDAD DEL CANAL DE PANAMÁ. **OP Notice to Shipping N-1-2026**. Panamá, 2026.",
+    "APS – AUTORIDADE PORTUÁRIA DE SANTOS. **Relatórios operacionais e cadastro de cais do Porto de "
+    "Santos**. Santos: APS, [2026].",
+    "BRASIL. Ministério da Infraestrutura. **Plano Mestre**: Complexo Portuário de Santos. Brasília, 2019. "
+    "Disponível em: https://www.gov.br/portos-e-aeroportos. Acesso em: 13 nov. 2026.",
     "BRASIL. Ministério de Portos e Aeroportos. **Porto de Santos movimenta 186,4 milhões de toneladas em "
     "2025 e avança para ampliar sua capacidade**. Brasília, 16 jan. 2026. Disponível em: https://www.gov.br/"
     "portos-e-aeroportos. Acesso em: 13 nov. 2026.",
@@ -1161,10 +1177,10 @@ REFS_A = [
     "PIANC. **Criteria for movements of moored ships in harbours**: a practical guide. Bruxelas: PIANC, "
     "1995. (Report of Working Group 24).",
     "PIANC. **Design principles for dry bulk marine terminals**. Bruxelas: PIANC, 2017.",
-    "PIANC. **Mooring of large ships at quay walls**. Bruxelas: PIANC, 2025. (MarCom Working Group "
-    "Report, n. 186).",
 ]
 REFS_B = [
+    "PIANC. **Mooring of large ships at quay walls**. Bruxelas: PIANC, 2025. (MarCom Working Group "
+    "Report, n. 186).",
     "SILVA, G. G. **Sistema de amarração em conjuntos portuários**. 2026a. Trabalho de Formatura I "
     "(PNV3510) – Escola Politécnica, Universidade de São Paulo, São Paulo, 2026.",
     "SILVA, G. G. **TF4.0**: análise dos resultados de simulação de amarração (5 condições de carga, "
@@ -1172,6 +1188,9 @@ REFS_B = [
     "SOUTHERN PORTS. **Mooring guide to Panamax ships**: loading grain – Berth 3 Bunbury. Bunbury: "
     "Southern Ports Authority, 2026. Disponível em: https://www.southernports.com.au. Acesso em: "
     "9 nov. 2026.",
+    "SREEDEVI, R.; NALLAYARASU, S. Investigation on ship mooring forces including passing ship effects "
+    "validated by experiments. **Ocean Engineering**, v. 283, art. 115004, set. 2023. DOI: "
+    "https://doi.org/10.1016/j.oceaneng.2023.115004.",
     "T-GRÃO CARGO TERMINAL DE GRANÉIS S/A. **Página inicial**. Santos, 2026. Disponível em: "
     "https://tgrao.com.br/. Acesso em: 19 jun. 2026.",
     "UK P&I CLUB. Understanding mooring incidents. **LP News**, Londres, jan. 2009. Disponível em: "
@@ -1181,7 +1200,7 @@ rw = (LARG - 0.15) / 2
 for k, refs in enumerate((REFS_A, REFS_B)):
     xx = X0 + k * (rw + 0.15)
     card(sl, xx, Y_CONT, rw, Y_FIM - Y_CONT)
-    texto(sl, xx + 0.25, Y_CONT + 0.22, rw - 0.5, Y_FIM - Y_CONT - 0.35, refs, 12, TXT2, entre=10)
+    texto(sl, xx + 0.25, Y_CONT + 0.2, rw - 0.5, Y_FIM - Y_CONT - 0.3, refs, 11, TXT2, entre=6)
 
 # ══════════════════════════════════════════════════════════════
 # Encerramento

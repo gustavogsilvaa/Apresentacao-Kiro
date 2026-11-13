@@ -20,7 +20,7 @@ Os números de slide abaixo são os da v8.
 | Slide | v7 | v8 |
 |---|---|---|
 | 2, 4, 5, 7, 10, 11 | calados de 9 e 14 m; maré de 0 e 1,58 m; MBL de 75 t | 5 condições de carga; maré do CA (−0,20 a 1,60 m); MBL de 736 kN, Ø 80 mm, EA 5.632 kN |
-| 3 · Motivação | números sem fonte | fonte de cada número: BRASIL (2026), SILVA (2026a) e UK P&I CLUB (2009) |
+| 3 · Motivação | números sem fonte; 14 de 60 berços de granéis vegetais | fonte de cada número, em itálico abaixo da legenda; 18 de 60 berços de granéis sólidos |
 | 6 · **O navio: medidas e movimentos** | — | **novo:** LOA, boca, pontal, calado e borda livre; os 6 movimentos com o máximo admissível da PIANC (1995) para graneleiro carregado por esteira |
 | 12 · Resumo estatístico | 394 condições do calado 9 m | picos dos elementos nas 5 condições + máximo por condição |
 | 13 · Distribuição | histogramas das 394 condições | mediana, P90 e máximo dos picos por condição de carga |
@@ -33,7 +33,7 @@ Os números de slide abaixo são os da v8.
 | 19–21 · Geometria | maré 0 e 1,58 m; 11 e 12 no cabeço S | maré −0,20 e 1,60 m; 11 e 12 no cabeço R; valores calculados no script |
 | 22 · **Efeito do carregamento** | — | **novo:** utilização máxima e ângulo vertical × calado |
 | 23–25 · Conclusões, alternativas, próximos passos | cabo 9 e cabeço S | resultados novos |
-| 26 · Referências | TF4.0 (calado 9 m) | TF4.0 (5 condições de carga), BRASIL (2026) e PIANC (1995) |
+| 26 · Referências | TF4.0 (calado 9 m) | TF4.0 (5 condições de carga), APS, BRASIL (2019 e 2026), PIANC (1995) e SREEDEVI; NALLAYARASU (2023) |
 
 ## Movimentos admissíveis do slide 6
 
@@ -50,9 +50,9 @@ Para descarga com guindastes, a mesma tabela dá 2,0 m, 1,0 m, 1,0 m, 2°, 2° e
 | Número | Fonte citada | Conferência |
 |---|---|---|
 | >100 Mt por ano | BRASIL (2026), Ministério de Portos e Aeroportos | 186,4 Mt em 2025, segundo a APS |
-| 14 de 60 berços | SILVA (2026a) | compilado no TF I; fonte primária não localizada na web |
+| 18 de 60 berços de granéis sólidos | APS ([2026]); BRASIL (2019), Plano Mestre do Complexo Portuário de Santos | informado pelo autor; o Plano Mestre vigente é o de 18 abr. 2019 (Ministério da Infraestrutura, hoje no site do MPor). A contagem de berços não foi conferida no documento |
 | US$ 34 mi em 20 anos | UK P&I CLUB (2009), *LP News*, jan. 2009 | o boletim cita “over US$34 million” em 20 anos |
-| até 40% com navio passante | SILVA (2026a) | compilado no TF I; fonte primária não localizada na web |
+| até 40% com navio passante | SREEDEVI; NALLAYARASU (2023), *Ocean Engineering*, v. 283, 115004 | dados do artigo conferidos no Crossref (DOI 10.1016/j.oceaneng.2023.115004); o valor de 40% não foi conferido no texto, que é pago |
 
 ## Dados (`dados/`)
 
@@ -71,8 +71,8 @@ software, do autor) e `imagens_recriadas/` (esquemas do layout típico e dos cri
 
 ## Pendências
 
-- **Fontes primárias de “14 de 60” e “até 40%” (slide 3):** hoje citam o TF I. Se o TF I tirou esses
-  números de outro trabalho, vale citar esse trabalho direto no slide.
+- **Referência da APS (slide 3):** o título e o ano da entrada “Relatórios operacionais e cadastro de cais
+  do Porto de Santos, [2026]” são provisórios. Troque pelo nome e pela data do documento consultado.
 - **Resumos de lastro, 25%, 50% e cheio:** só o resumo de 75% está em `dados/`. Por isso, os slides 14, 16,
   17 e 18 mostram a condição 75%, e não a mais crítica (cheio). Com os outros resumos (ou o
   `esforcos_todas_condicoes.csv` do notebook), esses slides podem passar a mostrar o navio cheio, e o
