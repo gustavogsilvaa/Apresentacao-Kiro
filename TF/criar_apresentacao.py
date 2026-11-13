@@ -68,7 +68,7 @@ def tint(cor, f):
 W, H = 13.333, 7.5
 X0, Y_CONT, Y_FIM = 0.75, 2.05, 6.95
 LARG = 11.85                   # largura útil do conteúdo
-TOTAL = 26
+TOTAL = 27
 prs = Presentation()
 prs.slide_width, prs.slide_height = Inches(W), Inches(H)
 
@@ -350,7 +350,8 @@ numero(sl)
 sl, cor = base("roteiro", "Apresentação", "Roteiro", "Do problema aos resultados parciais, em seis etapas")
 itens = [("motivacao", "Motivação", "Por que a amarração é crítica nos terminais graneleiros de Santos"),
          ("justificativa", "Justificativa", "A lacuna no monitoramento dos cabos e o objetivo desta etapa"),
-         ("cenario", "Cenário analisado", "Terminal T-Grão, maré de Santos, layout típico do Panamax e arranjo simulado"),
+         ("cenario", "Cenário analisado", "Terminal T-Grão, o navio e seus movimentos, maré de Santos, layout "
+                                          "típico do Panamax e arranjo simulado"),
          ("abordagem", "Abordagem", "Etapas do trabalho e critérios de avaliação"),
          ("resultados", "Resultados", "Leitura dos gráficos da simulação: esforços, riscos, geometria e "
                                       "efeito do carregamento"),
@@ -373,10 +374,12 @@ sl, cor = base("motivacao", "Etapa 1 · Motivação", "Por que estudar a amarra�
                "Durante o carregamento, o navio é mantido no berço apenas pelo sistema de amarração",
                etapa="motivacao")
 tw_ = (LARG - 0.45) / 4
-for k, (v, leg) in enumerate([(">100 Mt", "de carga por ano no Porto de Santos."),
-                              ("14 de 60", "berços dedicados a granéis vegetais."),
-                              ("US$ 34 mi", "em sinistros com equipamentos de amarração em 20 anos."),
-                              ("até 40%", "de aumento da tração nos cabos com a passagem de outro navio.")]):
+for k, (v, leg) in enumerate([(">100 Mt", "de carga por ano no Porto de Santos (BRASIL, 2026)."),
+                              ("14 de 60", "berços dedicados a granéis vegetais (SILVA, 2026a)."),
+                              ("US$ 34 mi", "em sinistros com equipamentos de amarração em 20 anos "
+                                            "(UK P&I CLUB, 2009)."),
+                              ("até 40%", "de aumento da tração nos cabos com a passagem de outro navio "
+                                          "(SILVA, 2026a).")]):
     kpi_tile(sl, X0 + k * (tw_ + 0.15), Y_CONT, tw_, 1.4, v, leg, cor)
 cy, mh = Y_CONT + 1.55, 1.65
 for k, (rot, corpo) in enumerate([
@@ -469,6 +472,50 @@ for k, (rot, kpi, leg, corpo) in enumerate([
           "pequeno gera força transversal relevante (OCIMF, 2018)."])]):
     card_texto(sl, X0 + k * (cw + 0.15), yb, cw, rh, rot, corpo, cor, kpi=kpi, kpi_legenda=leg,
                size=12.5)
+
+# ══════════════════════════════════════════════════════════════
+# NOVO · O navio: medidas principais e movimentos (nivelamento)
+# ══════════════════════════════════════════════════════════════
+MOV75 = D.carregar_resumo("75%").set_index("Elemento")["Valor"]
+f = lambda v, d=2: f"{v:.{d}f}".replace(".", ",")
+sl, cor = base("cenario", "Etapa 3 · Cenário analisado", "O navio: medidas e movimentos",
+               "Como olhamos o navio: as medidas que definem a geometria dos cabos e os movimentos que a "
+               "amarração restringe",
+               "Fontes: dimensões do Panamax: SILVA (2026a); movimentos máximos: resumo de esforços máximos da "
+               "condição 75% (SILVA, 2026b)", etapa="cenario")
+dh6 = 2.15
+por_imagem(sl, "06_navio_medidas_movimentos.png", X0, Y_CONT, LARG, dh6, pad=0.08)
+by6 = Y_CONT + dh6 + 0.15
+bh6 = Y_FIM - by6
+lw6 = 6.45
+card(sl, X0, by6, lw6, bh6)
+selo(sl, X0 + 0.2, by6 + 0.15, 1, cor)
+rotulo(sl, X0 + 0.57, by6 + 0.19, 5, "Medidas principais", cor)
+tabela(sl, X0 + 0.2, by6 + 0.52, lw6 - 0.4,
+       ["Medida", "Neste estudo", "O que define na amarração"],
+       [["Comprimento total (LOA)", "225 m", "cabeços alcançados e posição das buzinas"],
+        ["Boca (B)", "32,26 m", "largura do casco; distância das buzinas ao cais"],
+        ["Pontal (D)", "18,5 m", "altura do convés, onde ficam as buzinas"],
+        ["Calado (T)", "9 a 14 m", "parte submersa: área sob a corrente"],
+        ["Borda livre (D − T)", "9,5 a 4,5 m", "área ao vento e altura da buzina sobre o cais"]],
+       [1.75, 1.05, 3.2], alt_linha=0.33, size=10.5, cor_cabec=cor,
+       alinhar=[PP_ALIGN.LEFT, PP_ALIGN.CENTER, PP_ALIGN.LEFT])
+rx6 = X0 + lw6 + 0.15
+rw6 = LARG - lw6 - 0.15
+card(sl, rx6, by6, rw6, bh6)
+selo(sl, rx6 + 0.2, by6 + 0.15, 2, cor)
+rotulo(sl, rx6 + 0.57, by6 + 0.19, 4.5, "Movimentos no porto", cor)
+tabela(sl, rx6 + 0.2, by6 + 0.52, rw6 - 0.4,
+       ["Movimento", "Eixo", "Máximo com 75% de carga"],
+       [["Avanço (surge)", "x · longitudinal", f"{f(MOV75['Longitudinal [m]'])} m"],
+        ["Deriva (sway)", "y · transversal", f"{f(MOV75['Transversal [m]'])} m"],
+        ["Guinada (yaw)", "rotação em z", f"{f(MOV75['Yaw [deg]'])}°"],
+        ["Afundamento (heave)", "z · vertical", "lento, com maré e calado"],
+        ["Jogo (roll)", "rotação em x", "fora do resumo"],
+        ["Arfagem (pitch)", "rotação em y", "fora do resumo"]],
+       [1.55, 1.35, 1.75], alt_linha=0.28, size=10.5, cor_cabec=cor,
+       destaques={(i, None): DESTAQUE_FILL for i in range(3)},
+       alinhar=[PP_ALIGN.LEFT, PP_ALIGN.LEFT, PP_ALIGN.CENTER])
 
 # ══════════════════════════════════════════════════════════════
 # Estudo de maré
@@ -1103,6 +1150,9 @@ sl, cor = base("referencias", "Apresentação", "Referências",
                "Fontes citadas nos slides, conforme a ABNT NBR 6023")
 REFS_A = [
     "ACP – AUTORIDAD DEL CANAL DE PANAMÁ. **OP Notice to Shipping N-1-2026**. Panamá, 2026.",
+    "BRASIL. Ministério de Portos e Aeroportos. **Porto de Santos movimenta 186,4 milhões de toneladas em "
+    "2025 e avança para ampliar sua capacidade**. Brasília, 16 jan. 2026. Disponível em: https://www.gov.br/"
+    "portos-e-aeroportos. Acesso em: 13 nov. 2026.",
     "MARINHA DO BRASIL. Diretoria de Hidrografia e Navegação. **Tábuas das marés 2025**: Porto de Santos "
     "(SP). Niterói: DHN, 2025.",
     "OCIMF – OIL COMPANIES INTERNATIONAL MARINE FORUM. **Mooring Equipment Guidelines (MEG4)**. 4. ed. "
@@ -1110,10 +1160,10 @@ REFS_A = [
     "PIANC. **Design principles for dry bulk marine terminals**. Bruxelas: PIANC, 2017.",
     "PIANC. **Mooring of large ships at quay walls**. Bruxelas: PIANC, 2025. (MarCom Working Group "
     "Report, n. 186).",
-    "SILVA, G. G. **Sistema de amarração em conjuntos portuários**. 2026a. Trabalho de Formatura I "
-    "(PNV3510) – Escola Politécnica, Universidade de São Paulo, São Paulo, 2026.",
 ]
 REFS_B = [
+    "SILVA, G. G. **Sistema de amarração em conjuntos portuários**. 2026a. Trabalho de Formatura I "
+    "(PNV3510) – Escola Politécnica, Universidade de São Paulo, São Paulo, 2026.",
     "SILVA, G. G. **TF4.0**: análise dos resultados de simulação de amarração (5 condições de carga, "
     "394 condições ambientais). São Paulo, 2026b. Notebook Python.",
     "SOUTHERN PORTS. **Mooring guide to Panamax ships**: loading grain – Berth 3 Bunbury. Bunbury: "

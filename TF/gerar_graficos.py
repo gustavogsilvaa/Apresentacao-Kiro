@@ -263,7 +263,102 @@ def efeito_carregamento():
     save(fig, "22_efeito_carregamento.png")
 
 
+# ─────────────────────────────────────────────────────────────
+# Slide 6 · O navio: medidas principais e movimentos (esquema)
+# ─────────────────────────────────────────────────────────────
+TEAL, CINZA, AGUA = "#2F8F86", "#9A938A", "#DCE8F2"
+LOA, BOCA, PONTAL, T_LASTRO, T_CHEIO = 225.0, 32.26, 18.5, 9.0, 14.0
+
+
+def _cota(ax, p0, p1, txt, offset=(0, 0), ha="center", va="center", cor=ESC, fs=7.5):
+    ax.annotate("", p1, p0, arrowprops=dict(arrowstyle="<->", color=cor, lw=0.9, shrinkA=0, shrinkB=0))
+    xm, ym = (p0[0] + p1[0]) / 2 + offset[0], (p0[1] + p1[1]) / 2 + offset[1]
+    ax.text(xm, ym, txt, ha=ha, va=va, fontsize=fs, color=cor)
+
+
+def navio_medidas_movimentos():
+    from matplotlib.patches import Polygon, Rectangle, FancyArrowPatch
+    fig, axs = plt.subplots(1, 3, figsize=(11.7, 1.95), layout="constrained",
+                            gridspec_kw={"width_ratios": [1.35, 0.85, 1.0]})
+    for ax in axs:
+        ax.axis("off")
+
+    # ── A · Perfil: LOA, pontal, calado e borda livre (fora de escala na vertical)
+    ax = axs[0]
+    ax.add_patch(Rectangle((-12, -2.5), 252, T_LASTRO + 2.5, fc=AGUA, ec="none", zorder=0))
+    casco = [(0, PONTAL), (0, 4), (7, 0), (212, 0), (222, 6), (229, PONTAL)]
+    ax.add_patch(Polygon(casco, closed=True, fc="#F4EFE7", ec="#A49C90", lw=1.0, zorder=2))
+    ax.add_patch(Polygon([(0, T_LASTRO), (0, 4), (7, 0), (212, 0), (220.8, T_LASTRO * 0.6 + 0.6),
+                          (222.9, T_LASTRO)], closed=True, fc="#C9D7E6", ec="none", alpha=0.55, zorder=3))
+    ax.add_patch(Rectangle((6, PONTAL), 24, 13, fc="#E9E3D8", ec="#A49C90", lw=0.8, zorder=2))
+    for k in range(7):                                        # escotilhas dos porões
+        ax.add_patch(Rectangle((48 + 22 * k, PONTAL), 15, 2.2, fc="#E9E3D8", ec="#A49C90", lw=0.6, zorder=2))
+    ax.plot([-12, 240], [T_LASTRO, T_LASTRO], color="#6E9CC4", lw=1.0, zorder=4)
+    ax.text(118, 4.3, "parte submersa: área sob a corrente", ha="center", fontsize=7, style="italic",
+            color="#3F5F96", zorder=5)
+    ax.text(118, 13.4, "parte emersa: área ao vento", ha="center", fontsize=7, style="italic",
+            color="#7A7266", zorder=5)
+    _cota(ax, (0, 37), (229, 37), "comprimento total  LOA = 225 m", offset=(0, 3.6))
+    _cota(ax, (237, 0), (237, PONTAL), "pontal\nD = 18,5 m", offset=(5, 0), ha="left")
+    _cota(ax, (-6, 0), (-6, T_LASTRO), "calado T = 9 a 14 m", offset=(-4, -0.5), ha="right", fs=7.2)
+    _cota(ax, (-6, T_LASTRO), (-6, PONTAL), "borda livre = 9,5 a 4,5 m", offset=(-4, 0.8), ha="right", fs=7.2)
+    ax.text(-100, 47, "Perfil · medidas principais", fontsize=8.5, weight="bold", color="#1C2430")
+    ax.text(-100, -6.5, "lastro (T = 9 m) · escala vertical ampliada", fontsize=6.5,
+            style="italic", color="#8A8275")
+    ax.set_xlim(-100, 272)
+    ax.set_ylim(-8, 50)
+
+    # ── B · Seção junto ao cais: boca, buzina, cabeço e cabo (em escala, maré 0)
+    ax = axs[1]
+    fundo, z_cais, y_def = -16.5, 4.6, 1.4
+    z_q, z_conves = -T_LASTRO, PONTAL - T_LASTRO
+    ax.add_patch(Rectangle((-10, fundo), 54, -fundo, fc=AGUA, ec="none", zorder=0))
+    ax.add_patch(Rectangle((-10, fundo), 10, z_cais - fundo, fc="#E9E3D8", ec="#B9B2A6", lw=0.8, zorder=1))
+    y0, y1 = y_def, y_def + BOCA
+    secao = [(y0, z_conves), (y0, z_q + 2.5), (y0 + 2.5, z_q), (y1 - 2.5, z_q), (y1, z_q + 2.5), (y1, z_conves)]
+    ax.add_patch(Polygon(secao, closed=True, fc="#F4EFE7", ec="#A49C90", lw=1.0, zorder=2))
+    ax.add_patch(Rectangle((0, 0.8), y_def, 2.6, fc="#5E574D", ec="none", zorder=3))      # defensa
+    ax.plot([-10, 44], [0, 0], color="#6E9CC4", lw=1.0, zorder=4)
+    ax.plot(-3.5, z_cais + 0.8, "s", ms=4.5, color=ESC, zorder=5)                          # cabeço
+    ax.plot(y0 + 0.4, z_conves, "o", ms=4, color=ESC, zorder=5)                            # buzina
+    ax.plot([-3.5, y0 + 0.4], [z_cais + 0.8, z_conves], color=TEAL, lw=1.8, zorder=4)
+    ax.text(-9.5, z_cais + 1.6, "cais", fontsize=7, color="#8A8275", weight="bold")
+    ax.text(y0 + 1.2, z_conves + 1.6, "buzina", fontsize=7, color=ESC)
+    ax.text(y0 + 1.0, 2.1, "← defensa", fontsize=6.5, color="#5E574D", ha="left", va="center")
+    _cota(ax, (y0, z_conves + 4.5), (y1, z_conves + 4.5), "boca B = 32,26 m", offset=(0, 1.9))
+    _cota(ax, (y1 + 2.2, z_q), (y1 + 2.2, 0), "T", offset=(1.2, 0), ha="left")
+    ax.text(-10, 21.5, "Seção junto ao cais", fontsize=8.5, weight="bold", color="#1C2430")
+    ax.text(-10, fundo - 2.6, "em escala · lastro, maré 0", fontsize=6.5, style="italic", color="#8A8275")
+    ax.set_xlim(-10.5, 41)
+    ax.set_ylim(fundo - 3.5, 24)
+    ax.set_aspect("equal")
+
+    # ── C · Os 6 movimentos (vista de planta)
+    ax = axs[2]
+    ax.add_patch(Rectangle((-15, -24), 167, 8, fc="#E9E3D8", ec="none", zorder=0))
+    ax.text(-13, -21.6, "cais", fontsize=7, color="#8A8275", weight="bold")
+    planta = [(0, -10), (88, -10), (100, -5), (106, 0), (100, 5), (88, 10), (0, 10), (-3, 6), (-3, -6)]
+    ax.add_patch(Polygon(planta, closed=True, fc="#F4EFE7", ec="#A49C90", lw=1.0, zorder=1))
+    ax.text(14, 0, "popa", fontsize=6.5, color="#A49C90", weight="bold", va="center")
+    ax.text(84, 0, "proa", fontsize=6.5, color="#A49C90", weight="bold", va="center", ha="right")
+    seta = dict(arrowstyle="<|-|>", color=TEAL, lw=1.6, mutation_scale=9)
+    ax.add_patch(FancyArrowPatch((30, 0), (66, 0), **seta, zorder=3))
+    ax.text(48, -5.2, "avanço (surge) · x", fontsize=7.2, color=TEAL, ha="center", weight="bold")
+    ax.add_patch(FancyArrowPatch((118, -14), (118, 14), **seta, zorder=3))
+    ax.text(121, 0, "deriva\n(sway) · y", fontsize=7.2, color=TEAL, va="center", weight="bold")
+    ax.add_patch(FancyArrowPatch((36, 17), (62, 17), connectionstyle="arc3,rad=-0.35", **seta, zorder=3))
+    ax.text(49, 24.5, "guinada (yaw) · em torno de z", fontsize=7.2, color=TEAL, ha="center", weight="bold")
+    ax.text(-13, -31, "fora do plano: afundamento (heave), jogo (roll) e arfagem (pitch)",
+            fontsize=6.8, color=CINZA, style="italic")
+    ax.text(-13, 35, "Os 6 movimentos · vista de planta", fontsize=8.5, weight="bold", color="#1C2430")
+    ax.set_xlim(-15, 152)
+    ax.set_ylim(-34, 38)
+    ax.set_aspect("equal")
+    save(fig, "06_navio_medidas_movimentos.png")
+
+
 if __name__ == "__main__":
+    navio_medidas_movimentos()
     estatistica_por_calado()
     influencia_mare_75()
     eventos_governantes()
