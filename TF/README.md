@@ -21,7 +21,7 @@ Os números de slide abaixo são os da v8.
 |---|---|---|
 | 2, 4, 5, 7, 10, 11 | calados de 9 e 14 m; maré de 0 e 1,58 m; MBL de 75 t | 5 condições de carga; maré do CA (−0,20 a 1,60 m); MBL de 736 kN, Ø 80 mm, EA 5.632 kN |
 | 3 · Motivação | números sem fonte | fonte de cada número: BRASIL (2026), SILVA (2026a) e UK P&I CLUB (2009) |
-| 6 · **O navio: medidas e movimentos** | — | **novo:** LOA, boca, pontal, calado e borda livre; os 6 movimentos e os 3 que a simulação registra |
+| 6 · **O navio: medidas e movimentos** | — | **novo:** LOA, boca, pontal, calado e borda livre; os 6 movimentos com o máximo admissível da PIANC (1995) para graneleiro carregado por esteira |
 | 12 · Resumo estatístico | 394 condições do calado 9 m | picos dos elementos nas 5 condições + máximo por condição |
 | 13 · Distribuição | histogramas das 394 condições | mediana, P90 e máximo dos picos por condição de carga |
 | 14 · Influência da maré | calado 9 m (cabo 9, cabeço S) | condição 75%, com 11-R e 12-R |
@@ -33,7 +33,17 @@ Os números de slide abaixo são os da v8.
 | 19–21 · Geometria | maré 0 e 1,58 m; 11 e 12 no cabeço S | maré −0,20 e 1,60 m; 11 e 12 no cabeço R; valores calculados no script |
 | 22 · **Efeito do carregamento** | — | **novo:** utilização máxima e ângulo vertical × calado |
 | 23–25 · Conclusões, alternativas, próximos passos | cabo 9 e cabeço S | resultados novos |
-| 26 · Referências | TF4.0 (calado 9 m) | TF4.0 (5 condições de carga) e BRASIL (2026) |
+| 26 · Referências | TF4.0 (calado 9 m) | TF4.0 (5 condições de carga), BRASIL (2026) e PIANC (1995) |
+
+## Movimentos admissíveis do slide 6
+
+O MEG4 (OCIMF, 2018) não define limites de movimento para graneleiros: trata de cargas nos cabos,
+equipamentos e operação. Os limites usados são os da PIANC WG24 (1995), tabela de critérios de movimento
+para condições seguras de trabalho, linha “Bulk carriers · Conveyor belt”: avanço 5,0 m, deriva 2,5 m e
+guinada 3°; afundamento, arfagem e jogo sem valor. Avanço e guinada são valores pico a pico; a deriva é de
+zero a pico. A tabela foi conferida em ELZINGA, IRIBARREN e JENSEN (1992), *Movements of moored ships in
+harbours*, Coastal Engineering 1992, cap. 246, Tabela 2, que resume o relatório do grupo de trabalho.
+Para descarga com guindastes, a mesma tabela dá 2,0 m, 1,0 m, 1,0 m, 2°, 2° e 6°.
 
 ## Fontes do slide 3
 
@@ -48,7 +58,7 @@ Os números de slide abaixo são os da v8.
 
 | Arquivo | Origem | Usado em |
 |---|---|---|
-| `resumo_esforcos_maximos_75%.csv` | resumo exportado do software (cópia exata) | 6, 14, 16, 17, 18 e textos |
+| `resumo_esforcos_maximos_75%.csv` | resumo exportado do software (cópia exata) | 14, 16, 17, 18 e textos |
 | `estatisticas_colab.csv` | tabela “Resumo estatístico geral” do notebook, transcrita da saída do Colab | 12, 13, 22, 23–25 |
 | `eventos_cheio_colab.csv` | gráfico “eventos governantes” da condição cheio, transcrito da saída do Colab | 15 |
 | `ca_eventos_governantes.csv` | linhas do `CA_394_pontos.csv` dos eventos citados (ID = linha do CA) | 15 |

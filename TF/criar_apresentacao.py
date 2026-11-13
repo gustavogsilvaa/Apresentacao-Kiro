@@ -476,13 +476,14 @@ for k, (rot, kpi, leg, corpo) in enumerate([
 # ══════════════════════════════════════════════════════════════
 # NOVO · O navio: medidas principais e movimentos (nivelamento)
 # ══════════════════════════════════════════════════════════════
-MOV75 = D.carregar_resumo("75%").set_index("Elemento")["Valor"]
-f = lambda v, d=2: f"{v:.{d}f}".replace(".", ",")
+# Movimentos admissíveis: PIANC WG24 (1995), Tabela de critérios para condições seguras de trabalho,
+# graneleiro com carregamento por esteira (conveyor belt): avanço 5,0 m, deriva 2,5 m, guinada 3°;
+# afundamento, arfagem e jogo sem valor definido. Avanço e guinada pico a pico; deriva de zero a pico.
 sl, cor = base("cenario", "Etapa 3 · Cenário analisado", "O navio: medidas e movimentos",
                "Como olhamos o navio: as medidas que definem a geometria dos cabos e os movimentos que a "
                "amarração restringe",
-               "Fontes: dimensões do Panamax: SILVA (2026a); movimentos máximos: resumo de esforços máximos da "
-               "condição 75% (SILVA, 2026b)", etapa="cenario")
+               "Fontes: dimensões do Panamax: SILVA (2026a); movimentos admissíveis: PIANC (1995), graneleiro "
+               "carregado por esteira (avanço e guinada pico a pico; deriva de zero a pico)", etapa="cenario")
 dh6 = 2.15
 por_imagem(sl, "06_navio_medidas_movimentos.png", X0, Y_CONT, LARG, dh6, pad=0.08)
 by6 = Y_CONT + dh6 + 0.15
@@ -506,13 +507,13 @@ card(sl, rx6, by6, rw6, bh6)
 selo(sl, rx6 + 0.2, by6 + 0.15, 2, cor)
 rotulo(sl, rx6 + 0.57, by6 + 0.19, 4.5, "Movimentos no porto", cor)
 tabela(sl, rx6 + 0.2, by6 + 0.52, rw6 - 0.4,
-       ["Movimento", "Eixo", "Máximo com 75% de carga"],
-       [["Avanço (surge)", "x · longitudinal", f"{f(MOV75['Longitudinal [m]'])} m"],
-        ["Deriva (sway)", "y · transversal", f"{f(MOV75['Transversal [m]'])} m"],
-        ["Guinada (yaw)", "rotação em z", f"{f(MOV75['Yaw [deg]'])}°"],
-        ["Afundamento (heave)", "z · vertical", "lento, com maré e calado"],
-        ["Jogo (roll)", "rotação em x", "fora do resumo"],
-        ["Arfagem (pitch)", "rotação em y", "fora do resumo"]],
+       ["Movimento", "Eixo", "Máximo (PIANC, 1995)"],
+       [["Avanço (surge)", "x · longitudinal", "5,0 m"],
+        ["Deriva (sway)", "y · transversal", "2,5 m"],
+        ["Guinada (yaw)", "rotação em z", "3°"],
+        ["Afundamento (heave)", "z · vertical", "não definido"],
+        ["Jogo (roll)", "rotação em x", "não definido"],
+        ["Arfagem (pitch)", "rotação em y", "não definido"]],
        [1.55, 1.35, 1.75], alt_linha=0.28, size=10.5, cor_cabec=cor,
        destaques={(i, None): DESTAQUE_FILL for i in range(3)},
        alinhar=[PP_ALIGN.LEFT, PP_ALIGN.LEFT, PP_ALIGN.CENTER])
@@ -1157,6 +1158,8 @@ REFS_A = [
     "(SP). Niterói: DHN, 2025.",
     "OCIMF – OIL COMPANIES INTERNATIONAL MARINE FORUM. **Mooring Equipment Guidelines (MEG4)**. 4. ed. "
     "Londres: Witherby Publishing Group, 2018.",
+    "PIANC. **Criteria for movements of moored ships in harbours**: a practical guide. Bruxelas: PIANC, "
+    "1995. (Report of Working Group 24).",
     "PIANC. **Design principles for dry bulk marine terminals**. Bruxelas: PIANC, 2017.",
     "PIANC. **Mooring of large ships at quay walls**. Bruxelas: PIANC, 2025. (MarCom Working Group "
     "Report, n. 186).",
